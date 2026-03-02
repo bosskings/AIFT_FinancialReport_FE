@@ -5,8 +5,8 @@ import Login from './pages/Login'
 import ProtectedRoute from './providers/ProtectedRoute'
 import SideBar from './component/SideBar'
 import Content from './content/Content'
-import Navbar from './component/Navbar'
 import Register from './pages/Register'
+import Onboarding from './pages/Onboarding'
 
 const App = () => {
   return (
@@ -16,6 +16,8 @@ const App = () => {
           <Routes>
             <Route path='/login' element={<Login />}/>
             <Route path='/register' element={<Register />}/>
+            <Route path='/onboarding' element={<Onboarding />}/>
+            
             <Route
               path="*"
               element={
@@ -24,7 +26,6 @@ const App = () => {
                     <div className="flex min-h-screen bg-[#F8FAFC]">
                       <SideBar />
                       <div className="flex-1 ml-60">
-                        <Navbar />
                         <div className="mt-24 px-6">
                           <Content />
                         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [fullName, setFullName] = useState('');
@@ -103,7 +103,7 @@ const Register = () => {
           <h2 className="text-3xl font-bold text-gray-900 mb-1">Create Your Account</h2>
           <p className="text-sm text-gray-500 mb-8">Get started with your enterprise-sponsored retirement dashboard.</p>
 
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-5 text-gray-600">
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -227,12 +227,9 @@ const Register = () => {
             {/* Login link */}
             <p className="text-center text-sm text-gray-500 pt-1">
               Already have an account?{' '}
-              <span
-                className="text-blue-600 cursor-pointer hover:underline font-medium"
-                onClick={() => navigate('/login')}
-              >
-                Log in
-              </span>
+              <Link to="/login" className="text-blue-600 hover:underline">
+                <span className="">Log in</span>
+              </Link>
             </p>
 
             {/* Trust badges */}

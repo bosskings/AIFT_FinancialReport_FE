@@ -1,27 +1,26 @@
-import { IoSettingsOutline } from "react-icons/io5";
-import { PiStudent } from "react-icons/pi";
-import { TbLayoutDashboard } from "react-icons/tb";
+import { BiMoney } from "react-icons/bi";
+import { BsBagFill, BsPersonFill } from "react-icons/bs";
 
 
 export const navigationLink = [
     {
         id: 1,
-        name: 'Overview',
-        path: '/overview',
-        icon: <TbLayoutDashboard />
+        name: 'Profile',
+        path: '/profile',
+        icon: <BsPersonFill />
     },
     
     {
-        id: 3,
-        name: 'Students',
-        path: '/students',
-        icon: <PiStudent />
+        id: 2,
+        name: 'Income',
+        path: '/income',
+        icon: <BiMoney />
     }, 
     {
-        id: 4,
-        name: 'Settings',
-        path: '/settings',
-        icon: <IoSettingsOutline />
+        id: 3,
+        name: 'Employer Plan',
+        path: '/plans',
+        icon: <BsBagFill />
     },
 ]
 

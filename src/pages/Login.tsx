@@ -10,7 +10,7 @@ const Login = () => {
     event.preventDefault();
     console.log('Login attempt with:', { email, password });
     localStorage.setItem('accessToken', 'aabbccdd');
-    navigate('/overview');
+    navigate('/onboarding');
   };
 
   return (
@@ -85,7 +85,7 @@ const Login = () => {
           <h2 className="text-3xl font-bold text-gray-900 mb-1">Sign In</h2>
           <p className="text-sm text-gray-500 mb-8">Access your enterprise-sponsored retirement dashboard.</p>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-5 text-gray-600">
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Work Email</label>

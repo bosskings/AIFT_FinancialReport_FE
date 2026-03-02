@@ -12,16 +12,17 @@ const SideBar = () => {
   }
 
   return (
-    <div className='bg-[#1E6FFF] h-screen w-60 pt-6 flex flex-col fixed left-0 top-0 overflow-y-auto'>
+    <div className='bg-white h-screen w-60 pt-6 flex flex-col fixed left-0 top-0 overflow-y-auto'>
       
       {/* Logo/Brand Area */}
       <div className='px-5 mb-8'>
-        <h2 className='text-white text-xl font-semibold'>Schools</h2>
+        <h2 className='text-[#0f1f3d] text-xl font-semibold'>Retirement Planner</h2>
+        <p className='text-blue-200 text-xs font-medium mb-3 tracking-wider'>ENTERPRISE FINANCIAL TOOL</p>
       </div>
 
       {/* Main Menu Section */}
       <div className='mb-10'>
-        <p className='text-blue-200 text-xs font-medium px-5 mb-3 tracking-wider'>Main Menu</p>
+        <p className='text-gray-500 text-xs font-medium px-5 mb-3 tracking-wider'>Main Menu</p>
         <nav>
           <ul className='p-4'>
             {navigationLink.map((link) => (
@@ -30,9 +31,9 @@ const SideBar = () => {
                   to={link.path}
                   className={`${
                     location.pathname === link.path 
-                      ? 'bg-none text-white font-medium' 
-                      : 'text-blue-300 hover:bg-blue-500'
-                  } py-5 px-5 flex items-center gap-3 transition-colors border-b border-blue-400`}
+                      ? 'bg-none text-blue-900 font-medium bg-blue-50 border-l-4 border-blue-800 rounded-lg' 
+                      : 'text-gray-800  hover:bg-gray-200'
+                  } py-3 px-5 flex items-center gap-3 transition-colors`}
                 >
                   <span className='text-xl'>{link.icon}</span>
                   <span className='text-sm'>{link.name}</span>
