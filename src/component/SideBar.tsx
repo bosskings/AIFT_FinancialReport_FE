@@ -27,8 +27,7 @@ const SideBar = () => {
           <ul className='p-4 space-y-2'>
             {navigationLink.map((link) => (
               <li key={link.id}>
-                <Link 
-                  to={link.path}
+                <p
                   className={`${
                     location.pathname === link.path 
                       ? 'bg-none text-blue-900 font-medium bg-blue-50 border-l-4 border-blue-800 rounded-lg' 
@@ -37,7 +36,7 @@ const SideBar = () => {
                 >
                   <span className='text-xl'>{link.icon}</span>
                   <span className='text-sm'>{link.name}</span>
-                </Link>
+                </p>
               </li>
             ))}
           </ul>

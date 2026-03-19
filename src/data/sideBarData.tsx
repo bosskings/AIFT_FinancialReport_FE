@@ -32,12 +32,12 @@ export const navigationLink = [
         icon: <PiBankFill />
     },
 
-    {
-        id: 5,
-        name: 'Social Security',
-        path: '/questionnaire/social-security',
-        icon: <BsFillShieldFill />
-    },
+    // {
+    //     id: 5,
+    //     name: 'Social Security',
+    //     path: '/questionnaire/social-security',
+    //     icon: <BsFillShieldFill />
+    // },
 
     {
         id: 5,
