@@ -1,16 +1,34 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+// import { useLogin } from '../../hooks/mutations/auth';
+import { useLogin } from '../hooks/mutations/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
+  const { mutate: loginMutate, isPending: isLoginPending } = useLogin();
+
   const handleLogin = (event: any) => {
     event.preventDefault();
-    console.log('Login attempt with:', { email, password });
-    localStorage.setItem('accessToken', 'aabbccdd');
-    navigate('/onboarding');
+
+    loginMutate(
+      { email, password },
+      {
+        onSuccess: (response: any) => {
+          console.log('Login successful:', response.data);
+          toast.success('Login successful!');
+          localStorage.setItem('retirementAccessToken', response.data.token);
+          navigate('/onboarding');
+        },
+        onError: (error: any) => {
+          console.error('Login failed:', error.response?.data || error.message);
+          toast.error(error.response?.data?.error || error.message?.error || 'Login failed');
+        },
+      }
+    );
   };
 
   return (
@@ -82,6 +100,8 @@ const Login = () => {
       {/* Right Panel */}
       <div className="w-1/2 bg-gray-50 flex flex-col justify-center items-center px-12">
         <div className="w-full max-w-md">
+          <ToastContainer />
+
           <h2 className="text-3xl font-bold text-gray-900 mb-1">Sign In</h2>
           <p className="text-sm text-gray-500 mb-8">Access your enterprise-sponsored retirement dashboard.</p>
 
@@ -101,7 +121,8 @@ const Login = () => {
                   required
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white"
+                  disabled={isLoginPending}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white disabled:opacity-60"
                 />
               </div>
             </div>
@@ -121,7 +142,8 @@ const Login = () => {
                   required
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white"
+                  disabled={isLoginPending}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white disabled:opacity-60"
                 />
               </div>
             </div>
@@ -134,13 +156,26 @@ const Login = () => {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full py-3 rounded-lg text-white font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+              disabled={isLoginPending}
+              className="w-full py-3 rounded-lg text-white font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#0f1f3d' }}
             >
-              Sign In
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+              {isLoginPending ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign In
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </>
+              )}
             </button>
 
             {/* Divider + Register */}

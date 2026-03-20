@@ -1,11 +1,12 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
-import './index.css'
-import AuthProvider from './providers/AuthProvider'
-import Login from './pages/Login'
-import ProtectedRoute from './providers/ProtectedRoute'
 import Content from './content/Content'
-import Register from './pages/Register'
+import './index.css'
+import FinancialBlueprint from './pages/FinancialBlueprint'
+import Login from './pages/Login'
 import Onboarding from './pages/Onboarding'
+import Register from './pages/Register'
+import AuthProvider from './providers/AuthProvider'
+import ProtectedRoute from './providers/ProtectedRoute'
 
 const App = () => {
   return (
@@ -13,10 +14,11 @@ const App = () => {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path='/login' element={<Login />}/>
-            <Route path='/register' element={<Register />}/>
-            <Route path='/onboarding' element={<Onboarding />}/>
-            
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Register />} />
+            <Route path='/onboarding' element={<Onboarding />} />
+            <Route path='/financial-blueprint' element={<FinancialBlueprint />} />
+
             <Route
               path="*"
               element={
@@ -24,7 +26,7 @@ const App = () => {
                   element={
                     <div className="flex bg-[#F8FAFC]">
                       <div className="">
-                        <div className="mt-20">
+                        <div className="">
                           <Content />
                         </div>
                       </div>

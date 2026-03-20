@@ -10,7 +10,7 @@ export const useGenerateReport = () => {
 
   const generateReport = useMutation({
     mutationFn: async (data: any) => {
-      const token = (await localStorage.getItem("accessToken")) || ""
+      const token = (await localStorage.getItem("retirementAccessToken")) || ""
       return post_requests(`fincanceRecord/generateReport`, data, token)
     },
     onSuccess: () => {

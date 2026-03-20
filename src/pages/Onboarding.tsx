@@ -7,13 +7,13 @@ const Onboarding = () => {
   const navigate = useNavigate();
 
   const handleBegin = () => {
-    navigate('/profile');
+    navigate('/retirement-plan');
   };
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f0f2f5' }}>
       {/* Navbar */}
-      <nav className="bg-white border-b border-gray-200 fixed w-full py-3 lg:px-60 flex items-center justify-between">
+      <nav className="bg-white border-b border-gray-200 fixed w-full py-3 lg:px-60 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
@@ -21,23 +21,15 @@ const Onboarding = () => {
           >
             G
           </div>
-          <span className="font-semibold text-gray-800 text-sm">Retirement Planner</span>
         </div>
         <div className="flex items-center gap-6">
           <span className="text-sm text-gray-500 cursor-pointer hover:text-gray-700">Help Center</span>
-          <button
-            className="px-4 py-1.5 rounded-lg text-white text-sm font-medium"
-            style={{ backgroundColor: '#1a3260' }}
-            onClick={() => navigate('/login')}
-          >
-            Sign In
-          </button>
         </div>
       </nav>
 
       {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-12 mt-10">
-        <div className="w-full max-w-xl">
+        <div className="w-full max-w-2xl">
 
           {/* Security Banner */}
           <div

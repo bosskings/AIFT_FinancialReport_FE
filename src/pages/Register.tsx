@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import { useRegistration } from '../hooks/mutations/auth';
 
 const Register = () => {
   const [fullName, setFullName] = useState('');
@@ -7,6 +9,8 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
   const navigate = useNavigate();
+
+  const { mutate: registerMutate, isPending: isRegisterPending } = useRegistration();
 
   const getPasswordStrength = (pwd: string) => {
     if (!pwd) return 0;
@@ -25,9 +29,39 @@ const Register = () => {
   const handleRegister = (event: any) => {
     event.preventDefault();
     if (!agreed) return;
-    console.log('Register attempt with:', { fullName, email, password });
-    localStorage.setItem('accessToken', 'aabbccdd');
-    navigate('/overview');
+
+    registerMutate(
+      { fullname: fullName, email, password },
+      {
+        onSuccess: (response: any) => {
+          console.log('Register successful:', response.data);
+          toast.success('Registration successful! Please log in.');
+          navigate('/login');
+        },
+        onError: (error: any) => {
+          console.error('Register failed:', error.response?.data.message);
+
+          if (error.response?.data?.email) {
+            toast.error(error.response.data.email[0]);
+            return;
+          }
+          if (error.response?.data?.fullname) {
+            toast.error(error.response.data.fullname[0]);
+            return;
+          }
+          if (error.response?.data?.password) {
+            toast.error(error.response.data.password[0]);
+            return;
+          }
+          if (error.response?.data.message) {
+            toast.error(error.response.data.message);
+            return;
+          }
+
+          toast.error('Registration failed. Please try again.');
+        },
+      }
+    );
   };
 
   return (
@@ -100,6 +134,8 @@ const Register = () => {
       {/* Right Panel */}
       <div className="w-1/2 bg-gray-50 flex flex-col justify-center items-center px-12 overflow-y-auto">
         <div className="w-full max-w-md py-10">
+          <ToastContainer />
+
           <h2 className="text-3xl font-bold text-gray-900 mb-1">Create Your Account</h2>
           <p className="text-sm text-gray-500 mb-8">Get started with your enterprise-sponsored retirement dashboard.</p>
 
@@ -119,7 +155,8 @@ const Register = () => {
                   required
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Doe"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white"
+                  disabled={isRegisterPending}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white disabled:opacity-60"
                 />
               </div>
             </div>
@@ -139,7 +176,8 @@ const Register = () => {
                   required
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white"
+                  disabled={isRegisterPending}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white disabled:opacity-60"
                 />
               </div>
             </div>
@@ -159,7 +197,8 @@ const Register = () => {
                   required
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white"
+                  disabled={isRegisterPending}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white disabled:opacity-60"
                 />
               </div>
 
@@ -200,6 +239,7 @@ const Register = () => {
                 id="terms"
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
+                disabled={isRegisterPending}
                 className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-blue-600 cursor-pointer"
               />
               <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer leading-relaxed">
@@ -214,22 +254,32 @@ const Register = () => {
             {/* Submit */}
             <button
               type="submit"
-              disabled={!agreed}
+              disabled={!agreed || isRegisterPending}
               className="w-full py-3 rounded-lg text-white font-semibold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#0f1f3d' }}
             >
-              Get Started
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
+              {isRegisterPending ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  Get Started
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </>
+              )}
             </button>
 
             {/* Login link */}
             <p className="text-center text-sm text-gray-500 pt-1">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 hover:underline">
-                <span className="">Log in</span>
-              </Link>
+              <Link to="/login" className="text-blue-600 hover:underline">Log in</Link>
             </p>
 
             {/* Trust badges */}

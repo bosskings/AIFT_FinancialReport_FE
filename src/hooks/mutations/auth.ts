@@ -3,7 +3,7 @@ import { get_requests, post_requests, put_request_with_image } from "../helper/A
 
 export const useRegistration = () => {
   const registrationMutation = useMutation({
-    mutationFn: (data: any) => post_requests("register/", data),
+    mutationFn: (data: any) => post_requests("fincanceRecord/signup", data),
   });
 
   return registrationMutation;
@@ -12,7 +12,7 @@ export const useRegistration = () => {
 
 export const useLogin = () => {
   const loginMutation = useMutation({
-    mutationFn: (data: any) => post_requests("login/", data),
+    mutationFn: (data: any) => post_requests("fincanceRecord/login", data),
   });
 
   return loginMutation;
