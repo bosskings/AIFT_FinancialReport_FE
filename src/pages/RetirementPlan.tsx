@@ -839,7 +839,7 @@ export default function RetirementPlan() {
   let stepIds = STEPS.map(function (s) { return s.id; });
   let currentIndex = stepIds.indexOf(currentStep);
 
-  function buildPayload(fd: any) {
+  const buildPayload = (fd: any) => {
     let salary = parseMoney(fd.grossSalary);
     let otherInc = parseMoney(fd.otherIncome);
     let planBal = parseMoney(fd.planBalance);
@@ -934,7 +934,7 @@ export default function RetirementPlan() {
       ],
       salaryToday: salary,
       salaryFuture: salaryFuture,
-      inflationRate: fd.inflationRate,
+      inflationRates: fd.inflationRate,
       chancePast90: 38,
       chancePast95: 16,
       portfolioLastsTo: 93,
