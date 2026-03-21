@@ -1,5 +1,5 @@
 import { BiMoney } from "react-icons/bi";
-import { BsFillShieldFill, BsPersonFill } from "react-icons/bs";
+import { BsPersonFill } from "react-icons/bs";
 import { IoBag } from "react-icons/io5";
 import { LuGoal } from "react-icons/lu";
 import { PiBankFill } from "react-icons/pi";
@@ -12,13 +12,13 @@ export const navigationLink = [
         path: '/questionnaire/profile',
         icon: <BsPersonFill />
     },
-    
+
     {
         id: 2,
         name: 'Income',
         path: '/questionnaire/income',
         icon: <BiMoney />
-    }, 
+    },
     {
         id: 3,
         name: 'Employer Plan',

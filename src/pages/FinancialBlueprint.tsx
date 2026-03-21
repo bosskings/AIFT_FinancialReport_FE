@@ -351,7 +351,7 @@ const Page5 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
         ["MONTHLY INCOME", fmt(d.monthlyIncome), "bg-white border border-gray-200", "text-gray-900", "#16a34a", "bg-green-50 text-green-700"],
         ["MONTHLY EXPENSES", fmt(d.monthlyExpenses), "bg-white border border-gray-200", "text-gray-900", "#dc2626", "bg-red-50 text-red-700"],
         ["MONTHLY SURPLUS", fmt(d.monthlySurplus), "bg-blue-600", "text-white", "rgba(255,255,255,0.4)", "bg-white/20 text-white"],
-      ] as [string, string, string, string, string, string][]).map(([label, val, bg, textC, barC, badgeCls]) => (
+      ] as [string, string, string, string, string, string][]).map(([label, val, bg, textC, barC]) => (
         <div key={label} className={`flex-1 rounded-xl p-5 ${bg}`}>
           <div className={`text-[10px] tracking-[2px] uppercase mb-2 ${textC === "text-white" ? "text-white/60" : "text-gray-400"}`}>{label}</div>
           <div className={`text-3xl font-black mb-3 ${textC}`}>{val}</div>
@@ -1009,7 +1009,7 @@ const Page17 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 };
 
 // ─── PAGE 18: Healthcare ────────────────────────────────────────────────────────
-const Page18 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
+const Page18 = ({ onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <PageWrap>
     <PageHeader section="Healthcare Planning Strategy" onDownload={onDownload} isDownloading={isDownloading} />
     <SectionTitle title="Healthcare Cost Projection"
@@ -1053,7 +1053,7 @@ const Page18 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 );
 
 // ─── PAGE 19: Insurance ─────────────────────────────────────────────────────────
-const Page19 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
+const Page19 = ({ onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <PageWrap>
     <PageHeader section="Section 12.0: Insurance" onDownload={onDownload} isDownloading={isDownloading} />
     <SectionTitle title="Insurance Coverage Review"
@@ -1100,7 +1100,7 @@ const Page19 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 );
 
 // ─── PAGE 20: College Planning ──────────────────────────────────────────────────
-const Page20 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
+const Page20 = ({ onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <PageWrap>
     <PageHeader section="Section 11.0: College Planning" onDownload={onDownload} isDownloading={isDownloading} />
     <SectionTitle title="College Planning Analysis"
