@@ -1,20 +1,14 @@
-import { navigationLink } from '../data/sideBarData';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiHelpCircle } from 'react-icons/fi';
 import { FcSettings } from 'react-icons/fc';
+import { FiHelpCircle } from 'react-icons/fi';
+import { useLocation } from 'react-router-dom';
+import { navigationLink } from '../data/sideBarData';
 
 const SideBar = () => {
   const location = useLocation();
-  const navigate = useNavigate()
-
-  const handleLogout = () => {
-    localStorage.removeItem('accessToken')
-    navigate('/')
-  }
 
   return (
     <div className='bg-white h-screen w-60 pt-6 flex flex-col fixed left-0 top-0 overflow-y-auto'>
-      
+
       {/* Logo/Brand Area */}
       <div className='px-5 mb-3 pt-5'>
         <h2 className='text-[#0f1f3d] text-xl font-semibold'>Retirement Planner</h2>
@@ -28,11 +22,10 @@ const SideBar = () => {
             {navigationLink.map((link) => (
               <li key={link.id}>
                 <p
-                  className={`${
-                    location.pathname === link.path 
-                      ? 'bg-none text-blue-900 font-medium bg-blue-50 border-l-4 border-blue-800 rounded-lg' 
-                      : 'text-gray-800  hover:bg-gray-200'
-                  } py-3 px-5 flex items-center gap-3 transition-colors`}
+                  className={`${location.pathname === link.path
+                    ? 'bg-none text-blue-900 font-medium bg-blue-50 border-l-4 border-blue-800 rounded-lg'
+                    : 'text-gray-800  hover:bg-gray-200'
+                    } py-3 px-5 flex items-center gap-3 transition-colors`}
                 >
                   <span className='text-xl'>{link.icon}</span>
                   <span className='text-sm'>{link.name}</span>
