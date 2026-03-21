@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDownloadReport } from "../hooks/mutations/allMutation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ReportData {
@@ -116,19 +117,22 @@ const Logo = () => (
   </div>
 );
 
-const ExportBtn = () => (
-  <button onClick={() => window.print()}
-    className="flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-gray-700 transition-colors print:hidden">
-    🖨 Export to PDF
+const ExportBtn = ({ onDownload, isDownloading }: { onDownload?: () => void; isDownloading?: boolean }) => (
+  <button
+    onClick={onDownload ?? (() => window.print())}
+    disabled={isDownloading}
+    className="flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-gray-700 transition-colors print:hidden disabled:opacity-60"
+  >
+    {isDownloading ? "⏳ Downloading..." : "🖨 Export to PDF"}
   </button>
 );
 
-const PageHeader = ({ section }: { section?: string }) => (
+const PageHeader = ({ section, onDownload, isDownloading }: { section?: string; onDownload?: () => void; isDownloading?: boolean }) => (
   <div className="flex justify-between items-center mb-10">
     <Logo />
     <div className="flex items-center gap-6">
       {section && <span className="text-[10px] tracking-[3px] text-gray-400 uppercase">{section}</span>}
-      <ExportBtn />
+      <ExportBtn onDownload={onDownload} isDownloading={isDownloading} />
     </div>
   </div>
 );
@@ -164,9 +168,9 @@ const DimText = ({ children }: { children: React.ReactNode }) => (
 );
 
 // ─── PAGE 1: Cover ─────────────────────────────────────────────────────────────
-const Page1 = ({ d }: { d: ReportData }) => (
+const Page1 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <div className="bg-white min-h-screen px-16 py-12 box-border flex flex-col">
-    <div className="flex justify-between items-center"><Logo /><ExportBtn /></div>
+    <div className="flex justify-between items-center"><Logo /><ExportBtn onDownload={onDownload} isDownloading={isDownloading} /></div>
     <div className="flex-1 flex flex-col items-center justify-center text-center">
       <div className="text-6xl font-black text-gray-900 leading-tight">Financial Planning</div>
       <div className="text-6xl font-black text-blue-600 leading-tight mb-10">Blueprint</div>
@@ -188,7 +192,7 @@ const Page1 = ({ d }: { d: ReportData }) => (
 );
 
 // ─── PAGE 2: Personal Profile Summary ─────────────────────────────────────────
-const Page2 = ({ d }: { d: ReportData }) => {
+const Page2 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const retAge = getRetAge(d);
   const curAge = d.age != null && d.age > 0 && d.age < 110 ? String(d.age) : "—";
   const status = d.maritalStatus ? d.maritalStatus.charAt(0).toUpperCase() + d.maritalStatus.slice(1) : "—";
@@ -196,7 +200,7 @@ const Page2 = ({ d }: { d: ReportData }) => {
   const match = d.employerMatch != null ? (d.employerMatch * 100).toFixed(0) + "%" : "4%";
   return (
     <PageWrap>
-      <PageHeader section="Section 1.0: Demographic & Financial Profile" />
+      <PageHeader section="Section 1.0: Demographic & Financial Profile" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Personal Profile Summary"
         subtitle="Core assumptions and demographic data used for the financial projection model." />
       <div className="grid grid-cols-2 gap-12">
@@ -240,13 +244,13 @@ const Page2 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 3: Financial Health Scorecard ───────────────────────────────────────
-const Page3 = ({ d }: { d: ReportData }) => {
+const Page3 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const efund = Math.min(d.efundStatus ?? 0, 100);
   const savRate = d.monthlySurplus && d.monthlyIncome
     ? Math.min(Math.round((d.monthlySurplus / d.monthlyIncome) * 100 * 3), 90) : 65;
   return (
     <PageWrap>
-      <PageHeader section="Section 2.0: Cash Flow" />
+      <PageHeader section="Section 2.0: Cash Flow" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Financial Health Scorecard"
         subtitle="A comprehensive snapshot of your current liquidity, efficiency, and wealth accumulation." />
       <div className="flex gap-4 mb-8">
@@ -287,14 +291,14 @@ const Page3 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 4: Net Worth Statement ───────────────────────────────────────────────
-const Page4 = ({ d }: { d: ReportData }) => {
+const Page4 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const assets = d.assets ?? [];
   const totalA = d.totalAssets ?? assets.reduce((s, a) => s + a.value, 0);
   const totalL = d.totalLiabilities ?? 0;
   const nw = d.netWorth ?? (totalA - totalL);
   return (
     <PageWrap>
-      <PageHeader section="Section 2.0: Cash Flow" />
+      <PageHeader section="Section 2.0: Cash Flow" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Net Worth Statement" subtitle="Detailed breakdown of assets and liabilities." />
       <div className="grid grid-cols-2 gap-6">
         <div>
@@ -338,9 +342,9 @@ const Page4 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 5: Cash Flow Analysis ───────────────────────────────────────────────
-const Page5 = ({ d }: { d: ReportData }) => (
+const Page5 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <PageWrap>
-    <PageHeader section="Section 2.0: Cash Flow" />
+    <PageHeader section="Section 2.0: Cash Flow" onDownload={onDownload} isDownloading={isDownloading} />
     <SectionTitle title="Cash Flow Analysis" subtitle={`Financial performance report · ${d.date ?? "Current Period"}`} />
     <div className="flex gap-4 mb-6">
       {([
@@ -404,13 +408,13 @@ const Page5 = ({ d }: { d: ReportData }) => (
 );
 
 // ─── PAGE 6: Emergency Fund Analysis ──────────────────────────────────────────
-const Page6 = ({ d }: { d: ReportData }) => {
+const Page6 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const rec = d.recommendedEFund ?? 33348;
   const liquid = d.liquidSavings ?? 0;
   const pct = rec > 0 ? Math.min(Math.round((liquid / rec) * 100), 100) : 0;
   return (
     <PageWrap>
-      <PageHeader section="Section 3.0: Liquidity" />
+      <PageHeader section="Section 3.0: Liquidity" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Emergency Fund Analysis"
         subtitle="Assessing capital reserves required to sustain operational stability during unforeseen disruptions." />
       <div className="flex gap-4 mb-8">
@@ -447,11 +451,11 @@ const Page6 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 7: Debt Analysis ─────────────────────────────────────────────────────
-const Page7 = ({ d }: { d: ReportData }) => {
+const Page7 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const dti = d.debtToIncomeRatio ?? d.dtiRatio ?? 32;
   return (
     <PageWrap>
-      <PageHeader section="Section 4.0: Liabilities & Payoff" />
+      <PageHeader section="Section 4.0: Liabilities & Payoff" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Debt Analysis" subtitle="Detailed breakdown of current liabilities and optimized liquidation strategies." />
       <div className="flex gap-4 mb-6">
         <div className="flex-1 bg-blue-50 border-2 border-blue-600 rounded-xl p-5">
@@ -493,12 +497,12 @@ const Page7 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 8: Investment Allocation ─────────────────────────────────────────────
-const Page8 = ({ d }: { d: ReportData }) => {
+const Page8 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const alloc = d.allocation ?? [{ label: "U.S. Stocks", percent: 60 }, { label: "International Stocks", percent: 15 }, { label: "Bonds", percent: 20 }, { label: "Cash", percent: 5 }];
   const colors = ["#2563eb", "#7c3aed", "#16a34a", "#f59e0b"];
   return (
     <PageWrap>
-      <PageHeader section="Section 3.0: Allocation" />
+      <PageHeader section="Section 3.0: Allocation" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Current Investment Allocation" subtitle="Detailed analytical breakdown of strategic portfolio positioning." />
       <div className="flex justify-end mb-4">
         <span className="bg-green-50 text-green-800 text-xs font-bold px-4 py-1.5 rounded-full">✓ Risk Profile: {d.riskProfile ?? "Moderate Growth"}</span>
@@ -539,11 +543,11 @@ const Page8 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 9: Risk Tolerance ─────────────────────────────────────────────────────
-const Page9 = ({ d }: { d: ReportData }) => {
+const Page9 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const conf = d.confidenceScore ?? 3;
   return (
     <PageWrap>
-      <PageHeader section="Section 3.0: Risk" />
+      <PageHeader section="Section 3.0: Risk" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Risk Tolerance Assessment" subtitle="Evaluation of psychological risk behavior and financial risk capacity." />
       <div className="flex gap-4 mt-8">
         {([
@@ -564,7 +568,7 @@ const Page9 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 10: Retirement Projection ────────────────────────────────────────────
-const Page10 = ({ d }: { d: ReportData }) => {
+const Page10 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const pv = d.currentRetirementSavings ?? 82500;
   const pmt = (d.monthlyRetirementContribution ?? 633) * 12;
   const r = d.expectedAnnualReturn ?? 0.07;
@@ -581,7 +585,7 @@ const Page10 = ({ d }: { d: ReportData }) => {
   const curAge = d.age != null && d.age > 0 && d.age < 110 ? d.age : retAge - n;
   return (
     <PageWrap>
-      <PageHeader section="Section 4.0: Retirement" />
+      <PageHeader section="Section 4.0: Retirement" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Retirement Projection"
         subtitle="Visualization of wealth accumulation through retirement age with refined annual growth metrics." />
       <div className="flex gap-4 mb-6">
@@ -627,7 +631,7 @@ const Page10 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 11: Retirement Income Gap ────────────────────────────────────────────
-const Page11 = ({ d }: { d: ReportData }) => {
+const Page11 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const tgt = calcTarget(d);
   const proj = calcAnnualIncome(d);
   const g = calcGap(d);
@@ -635,7 +639,7 @@ const Page11 = ({ d }: { d: ReportData }) => {
   const barH = tgt > 0 ? Math.min(Math.round((proj / tgt) * 80), 80) : 50;
   return (
     <PageWrap>
-      <PageHeader section="Section 5.0: Retirement Income" />
+      <PageHeader section="Section 5.0: Retirement Income" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Retirement Income Gap Analysis"
         subtitle="Evaluation of current projected income against target lifestyle requirements." />
       <div className="flex gap-4 mb-6">
@@ -695,13 +699,13 @@ const Page11 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 12: Savings Adjustment ───────────────────────────────────────────────
-const Page12 = ({ d }: { d: ReportData }) => {
+const Page12 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const g = calcGap(d);
   const proj = calcAnnualIncome(d);
   const tgt = calcTarget(d);
   return (
     <PageWrap>
-      <PageHeader section="Section 6.0: Savings Adjustment" />
+      <PageHeader section="Section 6.0: Savings Adjustment" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Savings Adjustment Recommendations"
         subtitle={`Strategic paths to bridge the ${fmt(g)} annual income deficit through optimized planning.`} />
       <div className="flex gap-4 mb-6">
@@ -752,7 +756,7 @@ const Page12 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 13: Social Security Strategy ─────────────────────────────────────────
-const Page13 = ({ d }: { d: ReportData }) => {
+const Page13 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const s67 = d.ssa67 ?? 27550;
   const s70 = d.ssa70 ?? 34162;
   const be = d.breakEvenAge ?? 81;
@@ -760,7 +764,7 @@ const Page13 = ({ d }: { d: ReportData }) => {
   const ltv = Math.round((s70 - s67) * (lifeExp - be));
   return (
     <PageWrap>
-      <PageHeader section="Section 7.0: Social Security" />
+      <PageHeader section="Section 7.0: Social Security" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Social Security Strategy" subtitle="Optimal claiming age analysis to maximize lifetime benefit distribution." />
       <div className="flex gap-4 mb-6">
         {([
@@ -805,7 +809,7 @@ const Page13 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 14: Employer Plan Optimization ───────────────────────────────────────
-const Page14 = ({ d }: { d: ReportData }) => {
+const Page14 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const cur = d.contribRate ?? 8;
   const rec = Math.max(cur + 4, 12);
   const matchPct = d.employerMatch != null ? (d.employerMatch * 100).toFixed(0) + "%" : "4%";
@@ -813,7 +817,7 @@ const Page14 = ({ d }: { d: ReportData }) => {
   const recProj = Math.round(proj * 1.27);
   return (
     <PageWrap>
-      <PageHeader section="Section 7.0: Employer Plan" />
+      <PageHeader section="Section 7.0: Employer Plan" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Employer Plan Optimization" subtitle="Retirement Intelligence System Analysis & Summary" />
       <div className="flex gap-4 mb-6">
         {([
@@ -864,12 +868,12 @@ const Page14 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 15: Tax Optimization ─────────────────────────────────────────────────
-const Page15 = ({ d }: { d: ReportData }) => {
+const Page15 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const trad = d.traditionalPercent ?? 60;
   const roth = d.rothPercent ?? 40;
   return (
     <PageWrap>
-      <PageHeader section="Section 7.0: Tax Optimization" />
+      <PageHeader section="Section 7.0: Tax Optimization" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Tax Optimization Analysis"
         subtitle="Strategic framework for maximizing after-tax wealth accumulation and distribution efficiency." />
       <div className="flex gap-4 mb-6">
@@ -912,7 +916,7 @@ const Page15 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 16: Inflation Impact ─────────────────────────────────────────────────
-const Page16 = ({ d }: { d: ReportData }) => {
+const Page16 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   // ALWAYS recompute salaryFuture locally — the stored value can be astronomically wrong
   const inflRate = d.inflationRate ?? (typeof d.inflation === "number" ? d.inflation : 0.03);
   const years = Math.min(getYears(d), 40);
@@ -920,7 +924,7 @@ const Page16 = ({ d }: { d: ReportData }) => {
   const salFuture = Math.round(salNow * Math.pow(1 + inflRate, years));
   return (
     <PageWrap>
-      <PageHeader section="Section 8.0: Inflation & Purchasing Power" />
+      <PageHeader section="Section 8.0: Inflation & Purchasing Power" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Inflation Impact Analysis"
         subtitle="Evaluating the long-term impact of monetary erosion on lifestyle maintenance and capital preservation." />
       <div className="flex gap-4 mb-6">
@@ -955,13 +959,13 @@ const Page16 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 17: Longevity Risk ────────────────────────────────────────────────────
-const Page17 = ({ d }: { d: ReportData }) => {
+const Page17 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const c90 = d.chancePast90 ?? 38;
   const c95 = d.chancePast95 ?? 16;
   const lasts = d.portfolioLastsTo ?? 93;
   return (
     <PageWrap>
-      <PageHeader section="Section 9.0: Longevity" />
+      <PageHeader section="Section 9.0: Longevity" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Longevity Risk Analysis"
         subtitle="Quantifying the probability of portfolio sustainability relative to extended life expectancy projections." />
       <div className="flex gap-4 mb-6">
@@ -1005,9 +1009,9 @@ const Page17 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 18: Healthcare ────────────────────────────────────────────────────────
-const Page18 = ({ d }: { d: ReportData }) => (
+const Page18 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <PageWrap>
-    <PageHeader section="Healthcare Planning Strategy" />
+    <PageHeader section="Healthcare Planning Strategy" onDownload={onDownload} isDownloading={isDownloading} />
     <SectionTitle title="Healthcare Cost Projection"
       subtitle="Modeling medical expenditure and supplemental coverage requirements over the retirement horizon." />
     <div className="flex gap-4 mb-6">
@@ -1049,9 +1053,9 @@ const Page18 = ({ d }: { d: ReportData }) => (
 );
 
 // ─── PAGE 19: Insurance ─────────────────────────────────────────────────────────
-const Page19 = ({ d }: { d: ReportData }) => (
+const Page19 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <PageWrap>
-    <PageHeader section="Section 12.0: Insurance" />
+    <PageHeader section="Section 12.0: Insurance" onDownload={onDownload} isDownloading={isDownloading} />
     <SectionTitle title="Insurance Coverage Review"
       subtitle="Assessing mortality and morbidity risks to ensure family lifestyle continuity and asset protection." />
     <div className="flex gap-4 mb-6">
@@ -1096,9 +1100,9 @@ const Page19 = ({ d }: { d: ReportData }) => (
 );
 
 // ─── PAGE 20: College Planning ──────────────────────────────────────────────────
-const Page20 = ({ d }: { d: ReportData }) => (
+const Page20 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
   <PageWrap>
-    <PageHeader section="Section 11.0: College Planning" />
+    <PageHeader section="Section 11.0: College Planning" onDownload={onDownload} isDownloading={isDownloading} />
     <SectionTitle title="College Planning Analysis"
       subtitle="Strategic framework for educational funding and asset accumulation across multi-generational milestones." />
     <div className="flex gap-4 mb-6">
@@ -1144,7 +1148,7 @@ const Page20 = ({ d }: { d: ReportData }) => (
 );
 
 // ─── PAGE 21: Optimistic Scenario ──────────────────────────────────────────────
-const Page21 = ({ d }: { d: ReportData }) => {
+const Page21 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const base = calcPortfolio(d);
   const optimistic = Math.round(base * 1.25);
   const annInc = Math.round(optimistic * 0.04);
@@ -1153,7 +1157,7 @@ const Page21 = ({ d }: { d: ReportData }) => {
   const retAge = getRetAge(d);
   return (
     <PageWrap>
-      <PageHeader section="Section 11.0: Scenarios" />
+      <PageHeader section="Section 11.0: Scenarios" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Scenario Analysis - Optimistic Market"
         subtitle="A strategic projection of retirement outcomes assuming favorable macroeconomic factors and peak performance of core assets." />
       <div className="flex gap-6 mt-6">
@@ -1195,14 +1199,14 @@ const Page21 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 22: Conservative Scenario ────────────────────────────────────────────
-const Page22 = ({ d }: { d: ReportData }) => {
+const Page22 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const base = calcPortfolio(d);
   const conservative = Math.round(base * 0.74);
   const tgt = calcTarget(d);
   const incReplace = tgt > 0 ? Math.round(((conservative * 0.04 + (d.ssa67 ?? 27550)) / tgt) * 100) : 69;
   return (
     <PageWrap>
-      <PageHeader section="Section 11.0: Scenarios" />
+      <PageHeader section="Section 11.0: Scenarios" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Scenario Analysis - Conservative Market"
         subtitle="Detailed stress test and portfolio projections based on conservative market parameters." />
       <div className="flex gap-4 mt-8">
@@ -1245,7 +1249,7 @@ const Page22 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 23: Action Plan ───────────────────────────────────────────────────────
-const Page23 = ({ d }: { d: ReportData }) => {
+const Page23 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const actions = d.actionPlan ?? [
     "Increase retirement contribution to 12%",
     "Build emergency fund to " + fmt(d.recommendedEFund),
@@ -1255,7 +1259,7 @@ const Page23 = ({ d }: { d: ReportData }) => {
   const icons = ["📈", "🗂", "🛡", "🔄", "💡", "📊"];
   return (
     <PageWrap>
-      <PageHeader section="Section 12.0: Action Plan" />
+      <PageHeader section="Section 12.0: Action Plan" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Recommendation Action Plan" subtitle="Prioritized steps for your retirement intelligence" />
       <div className="flex flex-col gap-3 mt-4">
         {actions.map((action, i) => (
@@ -1274,12 +1278,12 @@ const Page23 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 24: Roadmap ───────────────────────────────────────────────────────────
-const Page24 = ({ d }: { d: ReportData }) => {
+const Page24 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const cur = d.contribRate ?? 8;
   const rec = Math.max(cur + 2, 10);
   return (
     <PageWrap>
-      <PageHeader section="Section 12.0: Roadmap" />
+      <PageHeader section="Section 12.0: Roadmap" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="12-Month Implementation Roadmap" subtitle="Retirement Intelligence System Strategic Schedule" />
       <div className="grid grid-cols-2 gap-4 mt-4">
         {([
@@ -1311,13 +1315,13 @@ const Page24 = ({ d }: { d: ReportData }) => {
 };
 
 // ─── PAGE 25: Disclosures ───────────────────────────────────────────────────────
-const Page25 = ({ d }: { d: ReportData }) => {
+const Page25 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const inflRate = d.inflationRate ?? (typeof d.inflation === "number" ? d.inflation : 0.03);
   const retAge = getRetAge(d);
   const annRet = d.expectedAnnualReturn ?? 0.065;
   return (
     <PageWrap>
-      <PageHeader section="Section 13.0: Disclosures" />
+      <PageHeader section="Section 13.0: Disclosures" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Disclosures & Assumptions" subtitle="Institutional Financial Planning Blueprint" />
       <div className="mt-4">
         {([
@@ -1352,8 +1356,8 @@ const Page25 = ({ d }: { d: ReportData }) => {
 export default function FinancialBlueprint() {
   const [current, setCurrent] = useState<number>(0);
   const [reportData, setReportData] = useState<ReportData>({});
-
-  console.log("Loaded reportData:", reportData);
+  const [rawPayload, setRawPayload] = useState<any>(null);
+  const { mutate: downloadReport, isPending: isDownloading } = useDownloadReport();
 
   // Load and parse localStorage on mount
   useEffect(() => {
@@ -1382,14 +1386,24 @@ export default function FinancialBlueprint() {
           });
         });
         setReportData(merged);
+        setRawPayload(merged);
       } else {
         // Direct flat object format
         setReportData(parsed);
+        setRawPayload(parsed);
       }
     } catch (e) {
       console.error("Failed to parse reportData from localStorage:", e);
     }
   }, []);
+
+  const handleDownload = () => {
+    if (!rawPayload) { window.print(); return; }
+    downloadReport(rawPayload, {
+      onSuccess: () => { alert("Report downloaded successfully!"); },
+      onError: () => { alert("Download failed. Please try again."); },
+    });
+  };
 
   const pageComponents = [
     Page1, Page2, Page3, Page4, Page5, Page6, Page7, Page8, Page9, Page10,
@@ -1410,7 +1424,7 @@ export default function FinancialBlueprint() {
 
       {/* ── Sticky Top Navigation ── */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-lg print:hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4 justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
 
           {/* Prev */}
           <button
@@ -1421,6 +1435,21 @@ export default function FinancialBlueprint() {
             ← <span className="hidden sm:inline">Previous</span>
           </button>
 
+          {/* Page dots */}
+          <div className="flex-1 flex flex-col items-center gap-1.5">
+            <span className="text-xs font-bold text-gray-600 tracking-widest uppercase">
+              Page {current + 1} / {total}
+            </span>
+            <div className="flex items-center gap-0.5 flex-wrap justify-center">
+              {Array.from({ length: total }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => goTo(i)}
+                  className={`rounded-full transition-all duration-200 ${i === current ? "w-5 h-2 bg-blue-600" : "w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400"}`}
+                />
+              ))}
+            </div>
+          </div>
 
           {/* Next */}
           <button
@@ -1436,9 +1465,25 @@ export default function FinancialBlueprint() {
       {/* ── Centered Page Content ── */}
       <div className="flex justify-center py-8 px-4">
         <div className="w-full max-w-5xl shadow-2xl rounded-lg overflow-hidden">
-          <PageComponent d={reportData} />
+          <PageComponent d={reportData} onDownload={handleDownload} isDownloading={isDownloading} />
         </div>
       </div>
+
+      {/* ── Bottom Navigation ── */}
+      <div className="flex justify-center items-center gap-4 pb-12 print:hidden">
+        <button
+          onClick={() => goTo(Math.max(0, current - 1))}
+          disabled={current === 0}
+          className="px-6 py-2.5 text-sm font-bold rounded-lg bg-gray-900 text-white disabled:opacity-30 hover:bg-gray-700 transition-colors"
+        >← Previous</button>
+        <span className="text-xs text-gray-400 font-semibold tracking-widest">{current + 1} / {total}</span>
+        <button
+          onClick={() => goTo(Math.min(total - 1, current + 1))}
+          disabled={current === total - 1}
+          className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white disabled:opacity-30 hover:bg-blue-500 transition-colors"
+        >Next →</button>
+      </div>
+
     </div>
   );
 }

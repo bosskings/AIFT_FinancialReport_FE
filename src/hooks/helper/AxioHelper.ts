@@ -17,6 +17,23 @@ export const post_requests = async (url: string, data: any, token = "") => {
 };
 
 
+export const post_request_blob = async (url: string, data: any, token = "") => {
+  let headers = {};
+  if (token !== "") {
+    headers = {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
+  const response = await axios.post(
+    `${'https://aift-financialreport.onrender.com/api/v1/'}${url}`,
+    data,
+    { headers, responseType: 'blob' } // ← this is the key fix
+  );
+  return response;
+};
+
+
 export const post_request_with_image = async (
   url: string,
   data: any,

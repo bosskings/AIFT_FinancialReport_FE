@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGenerateReport } from "../hooks/mutations/allMutation";
 
-let NAVY = "#1a3260";
-let NAVYLT = "#eef1f8";
-let NAVYBD = "#d4dcee";
+var NAVY = "#1a3260";
+var NAVYLT = "#eef1f8";
+var NAVYBD = "#d4dcee";
 
-let P = {
+var P = {
   user: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
   dollar: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
   check: "M5 13l4 4L19 7",
@@ -28,7 +28,7 @@ let P = {
   close: "M6 18L18 6M6 6l12 12",
 };
 
-let STEPS = [
+var STEPS = [
   { id: "profile", label: "Personal Profile" },
   { id: "income", label: "Income Details" },
   { id: "plans", label: "Employer Plans" },
@@ -46,8 +46,8 @@ function Ico(props: any) {
 }
 
 function fmtNum(v: any) {
-  let n = (v || "").replace(/[^0-9.]/g, "");
-  let parts = n.split(".");
+  var n = (v || "").replace(/[^0-9.]/g, "");
+  var parts = n.split(".");
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return parts.length > 1 ? parts[0] + "." + parts[1] : parts[0];
 }
@@ -59,17 +59,17 @@ function parseMoney(v: any) {
 // Fixed: returns null when DOB is empty or produces invalid age (prevents -17978 bug)
 function calcAge(dob: any) {
   if (!dob) return null;
-  let birth = new Date(dob);
+  var birth = new Date(dob);
   if (isNaN(birth.getTime())) return null;
-  let today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  let m = today.getMonth() - birth.getMonth();
+  var today = new Date();
+  var age = today.getFullYear() - birth.getFullYear();
+  var m = today.getMonth() - birth.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
   if (age <= 0 || age > 110) return null;
   return age;
 }
 
-let INP_BASE = "w-full py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white transition-colors";
+var INP_BASE = "w-full py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white transition-colors";
 function focusNavy(e: any) { e.target.style.borderColor = NAVY; }
 function blurGray(e: any) { e.target.style.borderColor = "#e5e7eb"; }
 
@@ -175,7 +175,7 @@ function CheckBtn(props: any) {
 }
 
 function SideBar(props: any) {
-  let currentIndex = STEPS.findIndex(function (s) { return s.id === props.currentStep; });
+  var currentIndex = STEPS.findIndex(function (s) { return s.id === props.currentStep; });
   return (
     <div className="bg-white h-full flex flex-col shadow-sm border-r border-gray-100">
       <div className="px-6 pt-8 pb-6 border-b border-gray-100 flex items-start justify-between">
@@ -190,9 +190,9 @@ function SideBar(props: any) {
       <nav className="px-3 flex-1 overflow-y-auto pt-3">
         <ul className="space-y-2">
           {STEPS.map(function (step, index) {
-            let isActive = step.id === props.currentStep;
-            let isCompleted = props.completedSteps.indexOf(step.id) !== -1;
-            let isPast = index < currentIndex;
+            var isActive = step.id === props.currentStep;
+            var isCompleted = props.completedSteps.indexOf(step.id) !== -1;
+            var isPast = index < currentIndex;
             return (
               <li key={step.id}>
                 <div className={"flex items-center gap-3 py-2.5 px-3 rounded-md transition-all duration-200 " + (isActive ? "bg-blue-50" : isPast || isCompleted ? "opacity-80" : "opacity-40")}>
@@ -216,13 +216,13 @@ function SideBar(props: any) {
 
 // ─── Step 1: Profile ──────────────────────────────────────────────────────────
 function Profile(props: any) {
-  let data = props.data;
-  let setData = props.setData;
+  var data = props.data;
+  var setData = props.setData;
   function handleSubmit(e: any) { e.preventDefault(); props.onNext(); }
   // Max date = 18 years ago (prevents future/invalid DOB that causes -17978 age)
-  let maxDob = new Date();
+  var maxDob = new Date();
   maxDob.setFullYear(maxDob.getFullYear() - 18);
-  let maxDobStr = maxDob.toISOString().split("T")[0];
+  var maxDobStr = maxDob.toISOString().split("T")[0];
 
   return (
     <div>
@@ -235,14 +235,14 @@ function Profile(props: any) {
             <FieldWrap label="Full Name" hint="Enter your full legal name as it appears on documents.">
               <InpIcon d={P.user} />
               <input type="text" value={data.fullName} required placeholder="John Doe"
-                onChange={function (e) { setData(function (p: any) { return Object.assign({}, p, { fullName: e.target.value }); }); }}
+                onChange={function (e) { setData(function (p) { return Object.assign({}, p, { fullName: e.target.value }); }); }}
                 className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
             </FieldWrap>
             <FieldWrap label="Date of Birth" hint="Used to calculate your current age and retirement timeline.">
               <InpIcon d={P.calendar} />
               {/* max attribute prevents invalid future dates that cause negative age */}
               <input type="date" value={data.dob} required max={maxDobStr}
-                onChange={function (e) { setData(function (p: any) { return Object.assign({}, p, { dob: e.target.value }); }); }}
+                onChange={function (e) { setData(function (p) { return Object.assign({}, p, { dob: e.target.value }); }); }}
                 className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
             </FieldWrap>
           </div>
@@ -250,7 +250,7 @@ function Profile(props: any) {
             <FieldWrap label="Marital Status" hint="Affects Social Security and tax calculations.">
               <InpIcon d={P.people} />
               <select value={data.maritalStatus} required
-                onChange={function (e) { setData(function (p: any) { return Object.assign({}, p, { maritalStatus: e.target.value }); }); }}
+                onChange={function (e) { setData(function (p) { return Object.assign({}, p, { maritalStatus: e.target.value }); }); }}
                 className={INP_BASE + " pl-10 pr-10 appearance-none"} onFocus={focusNavy} onBlur={blurGray}>
                 <option value="" disabled>Select status</option>
                 <option value="single">Single</option>
@@ -264,7 +264,7 @@ function Profile(props: any) {
             <FieldWrap label="Planned Retirement Age" hint="The age you ideally hope to stop working full-time.">
               <InpIcon d={P.clock} />
               <input type="number" value={data.retireAge} required min="40" max="80" placeholder="67"
-                onChange={function (e) { setData(function (p: any) { return Object.assign({}, p, { retireAge: e.target.value }); }); }}
+                onChange={function (e) { setData(function (p) { return Object.assign({}, p, { retireAge: e.target.value }); }); }}
                 className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
             </FieldWrap>
           </div>
@@ -281,8 +281,8 @@ function Profile(props: any) {
 
 // ─── Step 2: Income ───────────────────────────────────────────────────────────
 function Income(props: any) {
-  let data = props.data;
-  let setData = props.setData;
+  var data = props.data;
+  var setData = props.setData;
   function handleSubmit(e: any) { e.preventDefault(); props.onNext(); }
   return (
     <div>
@@ -295,13 +295,13 @@ function Income(props: any) {
             <FieldWrap label="Annual Gross Salary" hint="Total yearly earnings before taxes and deductions.">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm pointer-events-none">$</span>
               <input type="text" value={data.grossSalary} required placeholder="95,000"
-                onChange={function (e) { let v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { grossSalary: v }); }); }}
+                onChange={function (e) { var v = fmtNum(e.target.value); setData(function (p) { return Object.assign({}, p, { grossSalary: v }); }); }}
                 className={INP_BASE + " pl-8 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
             </FieldWrap>
             <FieldWrap label="Other Annual Income" hint="Rental income, dividends, side businesses, or other sources.">
               <InpIcon d={P.card} />
               <input type="text" value={data.otherIncome} placeholder="0"
-                onChange={function (e) { let v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { otherIncome: v }); }); }}
+                onChange={function (e) { var v = fmtNum(e.target.value); setData(function (p) { return Object.assign({}, p, { otherIncome: v }); }); }}
                 className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
             </FieldWrap>
           </div>
@@ -318,16 +318,16 @@ function Income(props: any) {
 
 // ─── Step 3: Plans ────────────────────────────────────────────────────────────
 function Plans(props: any) {
-  let data = props.data;
-  let setData = props.setData;
+  var data = props.data;
+  var setData = props.setData;
   function togglePlan(type: any) {
-    setData(function (p: any) {
-      let next = p.planTypes.indexOf(type) !== -1 ? p.planTypes.filter(function (t: any) { return t !== type; }) : p.planTypes.concat(type);
+    setData(function (p) {
+      var next = p.planTypes.indexOf(type) !== -1 ? p.planTypes.filter(function (t) { return t !== type; }) : p.planTypes.concat(type);
       return Object.assign({}, p, { planTypes: next });
     });
   }
   function handleSubmit(e: any) { e.preventDefault(); props.onNext(); }
-  let planOptions = [{ id: "401k", label: "401(k)" }, { id: "403b", label: "403(b)" }, { id: "457", label: "457" }, { id: "other", label: "Other" }];
+  var planOptions = [{ id: "401k", label: "401(k)" }, { id: "403b", label: "403(b)" }, { id: "457", label: "457" }, { id: "other", label: "Other" }];
 
   return (
     <div>
@@ -337,8 +337,8 @@ function Plans(props: any) {
         <div className="mb-8">
           <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-3">Do you currently participate in an employer-sponsored retirement plan?</label>
           <div className="grid grid-cols-2 gap-3">
-            <RadioToggle label="Yes, I participate" on={data.participates === true} onClick={function () { setData(function (p: any) { return Object.assign({}, p, { participates: true }); }); }} />
-            <RadioToggle label="No, I do not" on={data.participates === false} onClick={function () { setData(function (p: any) { return Object.assign({}, p, { participates: false }); }); }} />
+            <RadioToggle label="Yes, I participate" on={data.participates === true} onClick={function () { setData(function (p) { return Object.assign({}, p, { participates: true }); }); }} />
+            <RadioToggle label="No, I do not" on={data.participates === false} onClick={function () { setData(function (p) { return Object.assign({}, p, { participates: false }); }); }} />
           </div>
         </div>
         {data.participates && (
@@ -351,7 +351,7 @@ function Plans(props: any) {
                 <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2">Plan Type (select all that apply)</label>
                 <div className="grid grid-cols-2 gap-2">
                   {planOptions.map(function (opt) {
-                    let on = data.planTypes.indexOf(opt.id) !== -1;
+                    var on = data.planTypes.indexOf(opt.id) !== -1;
                     return (
                       <button key={opt.id} type="button" onClick={function () { togglePlan(opt.id); }}
                         className="flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all"
@@ -369,7 +369,7 @@ function Plans(props: any) {
               <FieldWrap label="Current Total Balance ($)" hint="Total saved amount across all selected plans.">
                 <InpIcon d={P.card} />
                 <input type="text" value={data.planBalance} placeholder="0"
-                  onChange={function (e) { let v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { planBalance: v }); }); }}
+                  onChange={function (e) { var v = fmtNum(e.target.value); setData(function (p) { return Object.assign({}, p, { planBalance: v }); }); }}
                   className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
               </FieldWrap>
             </div>
@@ -380,7 +380,7 @@ function Plans(props: any) {
                   <div className="flex border border-gray-200 rounded-l-lg overflow-hidden shrink-0" style={{ borderRight: "none" }}>
                     {["%", "$"].map(function (unit) {
                       return (
-                        <button key={unit} type="button" onClick={function () { setData(function (p: any) { return Object.assign({}, p, { contribUnit: unit }); }); }}
+                        <button key={unit} type="button" onClick={function () { setData(function (p) { return Object.assign({}, p, { contribUnit: unit }); }); }}
                           className="px-3 py-3 text-xs font-semibold transition-all"
                           style={data.contribUnit === unit ? { backgroundColor: NAVY, color: "white" } : { backgroundColor: "#f9fafb", color: "#6b7280" }}>
                           {unit}
@@ -390,7 +390,7 @@ function Plans(props: any) {
                   </div>
                   <input type="number" value={data.contribRate} min="0"
                     max={data.contribUnit === "%" ? "100" : undefined} step="0.5" placeholder="8"
-                    onChange={function (e) { setData(function (p: any) { return Object.assign({}, p, { contribRate: e.target.value }); }); }}
+                    onChange={function (e) { setData(function (p) { return Object.assign({}, p, { contribRate: e.target.value }); }); }}
                     className="flex-1 pl-4 pr-4 py-3 border border-gray-200 rounded-r-lg text-sm text-gray-700 focus:outline-none bg-white"
                     onFocus={focusNavy} onBlur={blurGray} />
                 </div>
@@ -399,7 +399,7 @@ function Plans(props: any) {
               <FieldWrap label="Employer Match" hint="Match percentage based on your deferral.">
                 <InpIcon d={P.dollar} />
                 <select value={data.empMatch}
-                  onChange={function (e) { setData(function (p: any) { return Object.assign({}, p, { empMatch: e.target.value }); }); }}
+                  onChange={function (e) { setData(function (p) { return Object.assign({}, p, { empMatch: e.target.value }); }); }}
                   className={INP_BASE + " pl-10 pr-10 appearance-none"} onFocus={focusNavy} onBlur={blurGray}>
                   <option value="no_match">No match</option>
                   <option value="0.25">25% match</option>
@@ -414,7 +414,7 @@ function Plans(props: any) {
               <FieldWrap label="Expected Annual Return (%)" hint="Projected long-term growth rate.">
                 <InpIcon d={P.trend} />
                 <input type="number" value={data.annReturn} step="0.1" min="0" max="20" placeholder="7.0"
-                  onChange={function (e) { setData(function (p: any) { return Object.assign({}, p, { annReturn: e.target.value }); }); }}
+                  onChange={function (e) { setData(function (p) { return Object.assign({}, p, { annReturn: e.target.value }); }); }}
                   className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
               </FieldWrap>
               <div>
@@ -422,8 +422,8 @@ function Plans(props: any) {
                 <div className="rounded-lg border border-gray-200 px-4 py-3" style={{ backgroundColor: "#fafafa" }}>
                   <p className="text-xs text-gray-500 mb-2">Continue contributions until retirement?</p>
                   <div className="flex items-center gap-4">
-                    <RadioInline label="Yes, until then" on={data.contUntilRet === true} onClick={function () { setData(function (p: any) { return Object.assign({}, p, { contUntilRet: true }); }); }} />
-                    <RadioInline label="No" on={data.contUntilRet === false} onClick={function () { setData(function (p: any) { return Object.assign({}, p, { contUntilRet: false }); }); }} />
+                    <RadioInline label="Yes, until then" on={data.contUntilRet === true} onClick={function () { setData(function (p) { return Object.assign({}, p, { contUntilRet: true }); }); }} />
+                    <RadioInline label="No" on={data.contUntilRet === false} onClick={function () { setData(function (p) { return Object.assign({}, p, { contUntilRet: false }); }); }} />
                   </div>
                 </div>
               </div>
@@ -458,25 +458,25 @@ function Plans(props: any) {
 
 // ─── Step 4: IRAs ─────────────────────────────────────────────────────────────
 function IRAs(props: any) {
-  let data = props.data;
-  let setData = props.setData;
+  var data = props.data;
+  var setData = props.setData;
   function toggleIraType(type: any) {
-    setData(function (p: any) {
-      let next = p.iraTypes.indexOf(type) !== -1 ? p.iraTypes.filter(function (t: string) { return t !== type; }) : p.iraTypes.concat(type);
+    setData(function (p) {
+      var next = p.iraTypes.indexOf(type) !== -1 ? p.iraTypes.filter(function (t) { return t !== type; }) : p.iraTypes.concat(type);
       return Object.assign({}, p, { iraTypes: next });
     });
   }
   function toggleSrc(src: any) {
-    setData(function (p: any) {
+    setData(function (p) {
       if (src === "none") return Object.assign({}, p, { incomeSrc: ["none"] });
-      let without = p.incomeSrc.filter(function (s: string) { return s !== "none"; });
-      let next = without.indexOf(src) !== -1 ? without.filter(function (s: string) { return s !== src; }) : without.concat(src);
+      var without = p.incomeSrc.filter(function (s) { return s !== "none"; });
+      var next = without.indexOf(src) !== -1 ? without.filter(function (s) { return s !== src; }) : without.concat(src);
       return Object.assign({}, p, { incomeSrc: next.length ? next : ["none"] });
     });
   }
   function handleSubmit(e: any) { e.preventDefault(); props.onNext(); }
-  let iraOpts = [{ id: "traditional", label: "Traditional IRA" }, { id: "roth", label: "Roth IRA" }, { id: "sep", label: "SEP IRA" }];
-  let srcOpts = [{ id: "rental", label: "Rental" }, { id: "business", label: "Business" }, { id: "other", label: "Other" }, { id: "none", label: "None" }];
+  var iraOpts = [{ id: "traditional", label: "Traditional IRA" }, { id: "roth", label: "Roth IRA" }, { id: "sep", label: "SEP IRA" }];
+  var srcOpts = [{ id: "rental", label: "Rental" }, { id: "business", label: "Business" }, { id: "other", label: "Other" }, { id: "none", label: "None" }];
 
   return (
     <div>
@@ -487,8 +487,8 @@ function IRAs(props: any) {
           <div className="mb-6">
             <p className="text-sm font-semibold text-gray-800 mb-3">Do you have any Individual Retirement Accounts (IRAs)?</p>
             <div className="flex items-center gap-6">
-              <RadioInline label="Yes" on={data.hasIRA === true} onClick={function () { setData(function (p: any) { return Object.assign({}, p, { hasIRA: true }); }); }} />
-              <RadioInline label="No" on={data.hasIRA === false} onClick={function () { setData(function (p: any) { return Object.assign({}, p, { hasIRA: false }); }); }} />
+              <RadioInline label="Yes" on={data.hasIRA === true} onClick={function () { setData(function (p) { return Object.assign({}, p, { hasIRA: true }); }); }} />
+              <RadioInline label="No" on={data.hasIRA === false} onClick={function () { setData(function (p) { return Object.assign({}, p, { hasIRA: false }); }); }} />
             </div>
           </div>
           {data.hasIRA && (
@@ -505,13 +505,13 @@ function IRAs(props: any) {
                 <FieldWrap label="Total IRA Balance" hint="Current combined value of all your IRAs.">
                   <InpIcon d={P.card} />
                   <input type="text" value={data.iraBal} placeholder="0"
-                    onChange={function (e) { let v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { iraBal: v }); }); }}
+                    onChange={function (e) { var v = fmtNum(e.target.value); setData(function (p) { return Object.assign({}, p, { iraBal: v }); }); }}
                     className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
                 </FieldWrap>
                 <FieldWrap label="Annual IRA Contributions" hint="Planned yearly contributions for this calendar year.">
                   <InpIcon d={P.plus} />
                   <input type="text" value={data.iraContrib} placeholder="0"
-                    onChange={function (e) { let v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { iraContrib: v }); }); }}
+                    onChange={function (e) { var v = fmtNum(e.target.value); setData(function (p) { return Object.assign({}, p, { iraContrib: v }); }); }}
                     className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
                 </FieldWrap>
               </div>
@@ -524,14 +524,14 @@ function IRAs(props: any) {
             <FieldWrap label="Taxable Savings or Brokerage Accounts (optional)" hint="Enter value of non-retirement investment accounts.">
               <InpIcon d={P.trend} />
               <input type="text" value={data.taxSavings} placeholder="0"
-                onChange={function (e) { let v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { taxSavings: v }); }); }}
+                onChange={function (e) { var v = fmtNum(e.target.value); setData(function (p) { return Object.assign({}, p, { taxSavings: v }); }); }}
                 className={INP_BASE + " pl-10 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
             </FieldWrap>
             <div className="mt-5">
               <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-3">Additional Income Sources</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {srcOpts.map(function (opt) {
-                  let on = data.incomeSrc.indexOf(opt.id) !== -1;
+                  var on = data.incomeSrc.indexOf(opt.id) !== -1;
                   return (
                     <button key={opt.id} type="button" onClick={function () { toggleSrc(opt.id); }}
                       className="flex items-center gap-2 px-3 py-3 rounded-lg border text-sm font-medium transition-all"
@@ -557,15 +557,15 @@ function IRAs(props: any) {
 
 // ─── Step 5: Goals ────────────────────────────────────────────────────────────
 function Goals(props: any) {
-  let data = props.data;
-  let setData = props.setData;
+  var data = props.data;
+  var setData = props.setData;
   function handleSubmit(e: any) { e.preventDefault(); props.onNext(); }
-  let lifestyleOpts = [
+  var lifestyleOpts = [
     { id: "basic", label: "Basic", desc: "Focus on essentials, simple living, and modest travel or entertainment.", d: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
     { id: "moderate", label: "Moderate", desc: "Comfortable living, regular vacations, and maintaining current lifestyle habits.", d: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" },
     { id: "enhanced", label: "Enhanced", desc: "Luxury travel, secondary property, and legacy gifting for family.", d: "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" },
   ];
-  let inflationOpts = [
+  var inflationOpts = [
     { id: "conservative", label: "Conservative (2%)", rate: 0.02 },
     { id: "standard", label: "Standard (3%)", rate: 0.03 },
     { id: "optimistic", label: "Optimistic (4%+)", rate: 0.04 },
@@ -583,7 +583,7 @@ function Goals(props: any) {
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm pointer-events-none">$</span>
               <input type="text" value={data.retirementIncome} required placeholder="85,000"
-                onChange={function (e) { let v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { retirementIncome: v }); }); }}
+                onChange={function (e) { var v = fmtNum(e.target.value); setData(function (p) { return Object.assign({}, p, { retirementIncome: v }); }); }}
                 className={INP_BASE + " pl-9 pr-4"} onFocus={focusNavy} onBlur={blurGray} />
             </div>
           </div>
@@ -591,9 +591,9 @@ function Goals(props: any) {
             <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-4">Preferred Retirement Lifestyle</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {lifestyleOpts.map(function (opt) {
-                let on = data.lifestyle === opt.id;
+                var on = data.lifestyle === opt.id;
                 return (
-                  <button key={opt.id} type="button" onClick={function () { setData(function (p: any) { return Object.assign({}, p, { lifestyle: opt.id }); }); }}
+                  <button key={opt.id} type="button" onClick={function () { setData(function (p) { return Object.assign({}, p, { lifestyle: opt.id }); }); }}
                     className="flex flex-col items-start text-left p-4 rounded-xl border-2 transition-all"
                     style={on ? { borderColor: NAVY, backgroundColor: NAVYLT } : { borderColor: "#e5e7eb", backgroundColor: "white" }}>
                     <span className="mb-3" style={{ color: on ? NAVY : "#9ca3af" }}><Ico d={opt.d} sz="w-5 h-5" /></span>
@@ -609,7 +609,7 @@ function Goals(props: any) {
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map(function (n) {
                 return (
-                  <button key={n} type="button" onClick={function () { setData(function (p: any) { return Object.assign({}, p, { confidence: n }); }); }}
+                  <button key={n} type="button" onClick={function () { setData(function (p) { return Object.assign({}, p, { confidence: n }); }); }}
                     className="flex-1 py-3.5 rounded-lg border-2 text-sm font-bold transition-all"
                     style={data.confidence === n ? { borderColor: NAVY, backgroundColor: NAVYLT, color: NAVY } : { borderColor: "#e5e7eb", backgroundColor: "white", color: "#6b7280" }}>
                     {n}
@@ -627,7 +627,7 @@ function Goals(props: any) {
             <div className="flex flex-col sm:flex-row gap-3">
               {inflationOpts.map(function (opt) {
                 return (
-                  <button key={opt.id} type="button" onClick={function () { setData(function (p: any) { return Object.assign({}, p, { inflation: opt.id, inflationRate: opt.rate }); }); }}
+                  <button key={opt.id} type="button" onClick={function () { setData(function (p) { return Object.assign({}, p, { inflation: opt.id, inflationRate: opt.rate }); }); }}
                     className="flex-1 py-3 px-3 rounded-lg border-2 text-sm font-semibold transition-all text-center"
                     style={data.inflation === opt.id ? { borderColor: NAVY, backgroundColor: NAVYLT, color: NAVY } : { borderColor: "#e5e7eb", backgroundColor: "white", color: "#6b7280" }}>
                     {opt.label}
@@ -646,17 +646,17 @@ function Goals(props: any) {
 
 // ─── Step 6: Review ───────────────────────────────────────────────────────────
 function Review(props: any) {
-  let [stage, setStage] = useState("acknowledge");
-  let [agreed, setAgreed] = useState(false);
-  let [progress, setProgress] = useState(0);
-  let [stepIdx, setStepIdx] = useState(0);
-  let [reportReady, setReportReady] = useState(false);
-  let navigate = useNavigate();
+  var [stage, setStage] = useState("acknowledge");
+  var [agreed, setAgreed] = useState(false);
+  var [progress, setProgress] = useState(0);
+  var [stepIdx, setStepIdx] = useState(0);
+  var [reportReady, setReportReady] = useState(false);
+  var navigate = useNavigate();
 
-  let generateReport = props.generateReport;
-  let isLoading = props.isLoading;
+  var generateReport = props.generateReport;
+  var isLoading = props.isLoading;
 
-  let loadSteps = [
+  var loadSteps = [
     "Analyzing your financial profile...",
     "Calculating tax projections...",
     "Modeling Social Security scenarios...",
@@ -669,7 +669,7 @@ function Review(props: any) {
     if (!reportReady) return;
     setStage("loading");
     setProgress(0);
-    let interval = setInterval(function () {
+    var interval = setInterval(function () {
       setProgress(function (prev) {
         if (prev >= 100) {
           clearInterval(interval);
@@ -691,11 +691,11 @@ function Review(props: any) {
     generateReport(props.payload, {
       onSuccess: function (response: any) {
         console.log("Report generation successful:", response);
-        let data = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
+        var data = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
         localStorage.setItem("reportData", data);
         setReportReady(true); // triggers loading animation → then navigate
       },
-      onError: function (err: any) {
+      onError: function (err) {
         console.error("Report generation failed:", err);
         alert("Something went wrong. Please try again.");
       },
@@ -704,7 +704,7 @@ function Review(props: any) {
 
   // Loading animation screen — stays visible until navigation
   if (stage === "loading") {
-    let circ = 2 * Math.PI * 28;
+    var circ = 2 * Math.PI * 28;
     return (
       <div className="flex flex-col items-center justify-center min-h-64 py-12 w-full">
         <Card cls="w-full max-w-2xl p-8 sm:p-10 text-center">
@@ -799,11 +799,11 @@ function Review(props: any) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function RetirementPlan() {
-  let [currentStep, setCurrentStep] = useState("profile");
-  let [completedSteps, setCompletedSteps] = useState<any>([]);
-  let [sidebarOpen, setSidebarOpen] = useState(false);
+  var [currentStep, setCurrentStep] = useState("profile");
+  var [completedSteps, setCompletedSteps] = useState([]);
+  var [sidebarOpen, setSidebarOpen] = useState(false);
 
-  let [formData, setFormData] = useState({
+  var [formData, setFormData] = useState({
     fullName: "",
     dob: "",
     maritalStatus: "",
@@ -835,48 +835,48 @@ export default function RetirementPlan() {
     inflationRate: 0.03,
   });
 
-  let { mutate: generateReport, isPending: isLoading } = useGenerateReport();
-  let stepIds = STEPS.map(function (s) { return s.id; });
-  let currentIndex = stepIds.indexOf(currentStep);
+  var { mutate: generateReport, isPending: isLoading } = useGenerateReport();
+  var stepIds = STEPS.map(function (s) { return s.id; });
+  var currentIndex = stepIds.indexOf(currentStep);
 
-  const buildPayload = (fd: any) => {
-    let salary = parseMoney(fd.grossSalary);
-    let otherInc = parseMoney(fd.otherIncome);
-    let planBal = parseMoney(fd.planBalance);
-    let iraBal = parseMoney(fd.iraBal);
-    let taxSav = parseMoney(fd.taxSavings);
-    let retIncome = parseMoney(fd.retirementIncome) || 85000;
-    let contribRateNum = parseFloat(fd.contribRate) || 8;
-    let monthlyContrib = fd.contribUnit === "%" ? Math.round((salary * contribRateNum / 100) / 12) : contribRateNum;
-    let empMatchNum = fd.empMatch === "no_match" ? 0 : parseFloat(fd.empMatch) || 0;
-    let currentAge = calcAge(fd.dob); // null-safe
-    let retireAgeNum = parseInt(fd.retireAge) || 67;
-    let yearsToRetire = currentAge != null ? Math.max(retireAgeNum - currentAge, 1) : 32;
-    let annReturnNum = parseFloat(fd.annReturn) / 100 || 0.07;
+  function buildPayload(fd: any) {
+    var salary = parseMoney(fd.grossSalary);
+    var otherInc = parseMoney(fd.otherIncome);
+    var planBal = parseMoney(fd.planBalance);
+    var iraBal = parseMoney(fd.iraBal);
+    var taxSav = parseMoney(fd.taxSavings);
+    var retIncome = parseMoney(fd.retirementIncome) || 85000;
+    var contribRateNum = parseFloat(fd.contribRate) || 8;
+    var monthlyContrib = fd.contribUnit === "%" ? Math.round((salary * contribRateNum / 100) / 12) : contribRateNum;
+    var empMatchNum = fd.empMatch === "no_match" ? 0 : parseFloat(fd.empMatch) || 0;
+    var currentAge = calcAge(fd.dob); // null-safe
+    var retireAgeNum = parseInt(fd.retireAge) || 67;
+    var yearsToRetire = currentAge != null ? Math.max(retireAgeNum - currentAge, 1) : 32;
+    var annReturnNum = parseFloat(fd.annReturn) / 100 || 0.07;
 
     function fv(pv: any, pmt: any, rate: any, n: any) {
       if (n <= 0) return pv;
       if (rate === 0) return pv + pmt * n;
-      let f = Math.pow(1 + rate, n);
+      var f = Math.pow(1 + rate, n);
       return pv * f + pmt * 12 * ((f - 1) / rate);
     }
 
-    let projectedPortfolio = Math.round(fv(planBal + iraBal + taxSav, monthlyContrib, annReturnNum, yearsToRetire));
-    let estimatedAnnualRetIncome = Math.round(projectedPortfolio * 0.04);
-    let retirementIncomeGap = Math.max(retIncome - estimatedAnnualRetIncome, 0);
-    let ssa67 = salary > 0 ? Math.round(salary * 0.29) : 27550;
-    let ssa70 = Math.round(ssa67 * 1.24);
+    var projectedPortfolio = Math.round(fv(planBal + iraBal + taxSav, monthlyContrib, annReturnNum, yearsToRetire));
+    var estimatedAnnualRetIncome = Math.round(projectedPortfolio * 0.04);
+    var retirementIncomeGap = Math.max(retIncome - estimatedAnnualRetIncome, 0);
+    var ssa67 = salary > 0 ? Math.round(salary * 0.29) : 27550;
+    var ssa70 = Math.round(ssa67 * 1.24);
     // Compute salaryFuture safely (cap years at 40 to avoid overflow)
-    let safeYears = Math.min(yearsToRetire, 40);
-    let salaryFuture = Math.round(salary * Math.pow(1 + fd.inflationRate, safeYears));
-    let totalAssets = planBal + iraBal + taxSav;
-    let monthlyIncome = Math.round((salary + otherInc) / 12);
-    let monthlyExpenses = Math.round(monthlyIncome * 0.78);
-    let monthlySurplus = monthlyIncome - monthlyExpenses;
-    let monthlyCoreExp = Math.round(monthlyExpenses * 0.9);
-    let recommendedEFund = monthlyCoreExp * 6;
-    let today = new Date();
-    let monthStr = today.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    var safeYears = Math.min(yearsToRetire, 40);
+    var salaryFuture = Math.round(salary * Math.pow(1 + fd.inflationRate, safeYears));
+    var totalAssets = planBal + iraBal + taxSav;
+    var monthlyIncome = Math.round((salary + otherInc) / 12);
+    var monthlyExpenses = Math.round(monthlyIncome * 0.78);
+    var monthlySurplus = monthlyIncome - monthlyExpenses;
+    var monthlyCoreExp = Math.round(monthlyExpenses * 0.9);
+    var recommendedEFund = monthlyCoreExp * 6;
+    var today = new Date();
+    var monthStr = today.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
     return {
       clientName: fd.fullName || "Client",
@@ -934,7 +934,6 @@ export default function RetirementPlan() {
       ],
       salaryToday: salary,
       salaryFuture: salaryFuture,
-      inflationRates: fd.inflationRate,
       chancePast90: 38,
       chancePast95: 16,
       portfolioLastsTo: 93,
@@ -951,11 +950,11 @@ export default function RetirementPlan() {
     };
   }
 
-  let payload = buildPayload(formData);
+  var payload = buildPayload(formData);
 
   function goNext() {
-    let id: any = stepIds[currentIndex];
-    if (completedSteps.indexOf(id) === -1) setCompletedSteps(function (prev: any) { return prev.concat(id); });
+    var id = stepIds[currentIndex];
+    if (completedSteps.indexOf(id) === -1) setCompletedSteps(function (prev) { return prev.concat(id); });
     if (currentIndex < stepIds.length - 1) setCurrentStep(stepIds[currentIndex + 1]);
     setSidebarOpen(false);
   }
@@ -975,7 +974,7 @@ export default function RetirementPlan() {
     return null;
   }
 
-  let currentLabel = (STEPS.find(function (s) { return s.id === currentStep; }) || {}).label || "";
+  var currentLabel = (STEPS.find(function (s) { return s.id === currentStep; }) || {}).label || "";
 
   return (
     <div className="py-10">
