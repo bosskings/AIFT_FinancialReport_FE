@@ -293,7 +293,7 @@ function Profile(props: any) {
               />
             </FieldWrap>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-7">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <FieldWrap label="Marital Status" hint="Affects Social Security and tax calculations.">
               <InpIcon d={P.people} />
               <select
@@ -315,6 +315,22 @@ function Profile(props: any) {
                 <Ico d={P.chevDown} sz="w-4 h-4" />
               </span>
             </FieldWrap>
+            <FieldWrap label="Number of Dependents" hint="Children or others financially dependent on you.">
+              <InpIcon d={P.people} />
+              <input
+                type="number"
+                value={data.dependents}
+                min="0"
+                max="20"
+                placeholder="0"
+                onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { dependents: e.target.value }); }); }}
+                className={INP_BASE + " pl-10 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
             <FieldWrap label="Planned Retirement Age" hint="The age you ideally hope to stop working full-time.">
               <InpIcon d={P.clock} />
               <input
@@ -325,6 +341,20 @@ function Profile(props: any) {
                 max="80"
                 placeholder="67"
                 onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { retireAge: e.target.value }); }); }}
+                className={INP_BASE + " pl-10 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
+            <FieldWrap label="Life Expectancy" hint="Used for longevity and portfolio sustainability planning.">
+              <InpIcon d={P.clock} />
+              <input
+                type="number"
+                value={data.lifeExpectancy}
+                min="70"
+                max="110"
+                placeholder="92"
+                onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { lifeExpectancy: e.target.value }); }); }}
                 className={INP_BASE + " pl-10 pr-4"}
                 onFocus={focusNavy}
                 onBlur={blurGray}
@@ -379,6 +409,61 @@ function Income(props: any) {
                 value={data.otherIncome}
                 placeholder="0"
                 onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { otherIncome: v }); }); }}
+                className={INP_BASE + " pl-10 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+            <FieldWrap label="Monthly Income" hint="Total take-home monthly income across all sources.">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm pointer-events-none">$</span>
+              <input
+                type="text"
+                value={data.monthlyIncome}
+                placeholder="7,916"
+                onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { monthlyIncome: v }); }); }}
+                className={INP_BASE + " pl-8 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
+            <FieldWrap label="Monthly Expenses" hint="Total monthly spending including fixed and variable costs.">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm pointer-events-none">$</span>
+              <input
+                type="text"
+                value={data.monthlyExpenses}
+                placeholder="6,200"
+                onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { monthlyExpenses: v }); }); }}
+                className={INP_BASE + " pl-8 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+            <FieldWrap label="Employer Name" hint="Your current employer or organization.">
+              <InpIcon d={P.user} />
+              <input
+                type="text"
+                value={data.employer}
+                placeholder="Sample Corporation Inc."
+                onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { employer: e.target.value }); }); }}
+                className={INP_BASE + " pl-10 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
+            <FieldWrap label="Effective Tax Rate (%)" hint="Your estimated effective federal + state tax rate.">
+              <InpIcon d={P.chart} />
+              <input
+                type="number"
+                value={data.taxRate}
+                min="0"
+                max="60"
+                step="0.5"
+                placeholder="22"
+                onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { taxRate: e.target.value }); }); }}
                 className={INP_BASE + " pl-10 pr-4"}
                 onFocus={focusNavy}
                 onBlur={blurGray}
@@ -733,18 +818,58 @@ function IRAs(props: any) {
           <div className="mb-6">
             <h2 className="text-lg font-bold text-gray-900 mb-1">Other Savings & Income</h2>
             <div className="h-0.5 w-10 rounded-full mb-5" style={{ backgroundColor: NAVY }} />
-            <FieldWrap label="Taxable Savings or Brokerage Accounts (optional)" hint="Enter value of non-retirement investment accounts.">
-              <InpIcon d={P.trend} />
-              <input
-                type="text"
-                value={data.taxSavings}
-                placeholder="0"
-                onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { taxSavings: v }); }); }}
-                className={INP_BASE + " pl-10 pr-4"}
-                onFocus={focusNavy}
-                onBlur={blurGray}
-              />
-            </FieldWrap>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+              <FieldWrap label="Taxable Savings or Brokerage Accounts" hint="Enter value of non-retirement investment accounts.">
+                <InpIcon d={P.trend} />
+                <input
+                  type="text"
+                  value={data.taxSavings}
+                  placeholder="0"
+                  onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { taxSavings: v }); }); }}
+                  className={INP_BASE + " pl-10 pr-4"}
+                  onFocus={focusNavy}
+                  onBlur={blurGray}
+                />
+              </FieldWrap>
+              <FieldWrap label="529 Plan Balance" hint="Current total saved in college savings plans.">
+                <InpIcon d={P.trend} />
+                <input
+                  type="text"
+                  value={data.savings529}
+                  placeholder="0"
+                  onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { savings529: v }); }); }}
+                  className={INP_BASE + " pl-10 pr-4"}
+                  onFocus={focusNavy}
+                  onBlur={blurGray}
+                />
+              </FieldWrap>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+              <FieldWrap label="Current Life Insurance Coverage ($)" hint="Total death benefit of existing life insurance policies.">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm pointer-events-none">$</span>
+                <input
+                  type="text"
+                  value={data.lifeInsurance}
+                  placeholder="500,000"
+                  onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { lifeInsurance: v }); }); }}
+                  className={INP_BASE + " pl-8 pr-4"}
+                  onFocus={focusNavy}
+                  onBlur={blurGray}
+                />
+              </FieldWrap>
+              <FieldWrap label="Net Worth (optional)" hint="Your estimated total assets minus total liabilities.">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm pointer-events-none">$</span>
+                <input
+                  type="text"
+                  value={data.netWorthInput}
+                  placeholder="151,000"
+                  onChange={function (e: any) { var v = fmtNum(e.target.value); setData(function (p: any) { return Object.assign({}, p, { netWorthInput: v }); }); }}
+                  className={INP_BASE + " pl-8 pr-4"}
+                  onFocus={focusNavy}
+                  onBlur={blurGray}
+                />
+              </FieldWrap>
+            </div>
             <div className="mt-5">
               <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-3">Additional Income Sources</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -824,6 +949,37 @@ function Goals(props: any) {
                 onBlur={blurGray}
               />
             </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-7">
+            <FieldWrap label="Number of Children" hint="Used for college planning projections.">
+              <InpIcon d={P.people} />
+              <input
+                type="number"
+                value={data.children}
+                min="0"
+                max="20"
+                placeholder="0"
+                onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { children: e.target.value }); }); }}
+                className={INP_BASE + " pl-10 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
+            <FieldWrap label="Salary Growth Rate (%)" hint="Expected annual increase in your salary.">
+              <InpIcon d={P.trend} />
+              <input
+                type="number"
+                value={data.salaryGrowth}
+                step="0.1"
+                min="0"
+                max="20"
+                placeholder="3.0"
+                onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { salaryGrowth: e.target.value }); }); }}
+                className={INP_BASE + " pl-10 pr-4"}
+                onFocus={focusNavy}
+                onBlur={blurGray}
+              />
+            </FieldWrap>
           </div>
           <div className="mb-7">
             <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-4">
@@ -1096,24 +1252,35 @@ export default function RetirementPlan() {
     fullName: "",
     dob: "",
     maritalStatus: "",
+    dependents: "0",
     retireAge: "67",
+    lifeExpectancy: "92",
     grossSalary: "",
     otherIncome: "",
+    employer: "",
+    taxRate: "22",
+    monthlyIncome: "",
+    monthlyExpenses: "",
     participates: true,
     planTypes: ["401k"],
     planBalance: "",
     contribRate: "8",
     contribUnit: "%",
     empMatch: "0.50",
-    annReturn: "7.0",
+    annReturn: "6.5",
     contUntilRet: true,
     hasIRA: false,
     iraTypes: [],
     iraBal: "",
     iraContrib: "",
     taxSavings: "",
+    savings529: "",
+    lifeInsurance: "",
+    netWorthInput: "",
     incomeSrc: ["none"],
     retirementIncome: "",
+    children: "0",
+    salaryGrowth: "3.0",
     lifestyle: "moderate",
     confidence: 3,
     inflation: "standard",
@@ -1130,14 +1297,22 @@ export default function RetirementPlan() {
     var planBal = parseMoney(fd.planBalance);
     var iraBal = parseMoney(fd.iraBal);
     var taxSav = parseMoney(fd.taxSavings);
+    var savings529Val = parseMoney(fd.savings529);
+    var lifeInsVal = parseMoney(fd.lifeInsurance);
+    var netWorthInputVal = parseMoney(fd.netWorthInput);
     var retIncome = parseMoney(fd.retirementIncome) || 85000;
     var contribRateNum = parseFloat(fd.contribRate) || 8;
     var monthlyContrib = fd.contribUnit === "%" ? Math.round((salary * contribRateNum / 100) / 12) : contribRateNum;
     var empMatchNum = fd.empMatch === "no_match" ? 0 : parseFloat(fd.empMatch) || 0;
     var currentAge = calcAge(fd.dob);
     var retireAgeNum = parseInt(fd.retireAge) || 67;
+    var lifeExpNum = parseInt(fd.lifeExpectancy) || 92;
+    var dependentsNum = parseInt(fd.dependents) || 0;
+    var childrenNum = parseInt(fd.children) || 0;
+    var salaryGrowthNum = parseFloat(fd.salaryGrowth) / 100 || 0.03;
+    var taxRateNum = parseFloat(fd.taxRate) || 22;
     var yearsToRetire = currentAge != null ? Math.max(retireAgeNum - currentAge, 1) : 32;
-    var annReturnNum = parseFloat(fd.annReturn) / 100 || 0.07;
+    var annReturnNum = parseFloat(fd.annReturn) / 100 || 0.065;
 
     function fv(pv: any, pmt: any, rate: any, n: any) {
       if (n <= 0) return pv;
@@ -1149,30 +1324,69 @@ export default function RetirementPlan() {
     var projectedPortfolio = Math.round(fv(planBal + iraBal + taxSav, monthlyContrib, annReturnNum, yearsToRetire));
     var estimatedAnnualRetIncome = Math.round(projectedPortfolio * 0.04);
     var retirementIncomeGap = Math.max(retIncome - estimatedAnnualRetIncome, 0);
+    var gapCoverage = retIncome > 0 ? Math.round((retirementIncomeGap / retIncome) * 100) : 0;
     var ssa67 = salary > 0 ? Math.round(salary * 0.29) : 27550;
     var ssa70 = Math.round(ssa67 * 1.24);
     var safeYears = Math.min(yearsToRetire, 40);
     var salaryFuture = Math.round(salary * Math.pow(1 + fd.inflationRate, safeYears));
     var totalAssets = planBal + iraBal + taxSav;
-    var monthlyIncome = Math.round((salary + otherInc) / 12);
-    var monthlyExpenses = Math.round(monthlyIncome * 0.78);
-    var monthlySurplus = monthlyIncome - monthlyExpenses;
-    var monthlyCoreExp = Math.round(monthlyExpenses * 0.9);
+    var netWorthCalc = netWorthInputVal > 0 ? netWorthInputVal : totalAssets;
+
+    // Cash flow
+    var monthlyIncomeVal = parseMoney(fd.monthlyIncome) || Math.round((salary + otherInc) / 12);
+    var monthlyExpensesVal = parseMoney(fd.monthlyExpenses) || Math.round(monthlyIncomeVal * 0.78);
+    var monthlySurplus = monthlyIncomeVal - monthlyExpensesVal;
+    var monthlyCoreExp = Math.round(monthlyExpensesVal * 0.9);
     var recommendedEFund = monthlyCoreExp * 6;
+
+    // Insurance
+    var recommendedInsurance = Math.round(salary * (10 + Math.min(dependentsNum, 5)));
+    var insuranceGap = Math.max(recommendedInsurance - lifeInsVal, 0);
+
+    // College
+    var collegeCostPerChild = 120000;
+    var collegeTotalCost = childrenNum * collegeCostPerChild * 2; // 2 children avg cost shown
+    var collegeGap = Math.max(collegeTotalCost - savings529Val, 0);
+
+    // Savings adjustment
+    var savingsIncrease = retirementIncomeGap > 0 ? Math.round((retirementIncomeGap / 25) / 12) : 325;
+    var delayRetirementYears = retirementIncomeGap > 0 ? 2 : 0;
+
+    // Scorecard
+    var savingsRateScore = monthlySurplus > 0 && monthlyIncomeVal > 0
+      ? Math.min(Math.round((monthlySurplus / monthlyIncomeVal) * 100 * 3), 90) : 65;
+    var efundPct = recommendedEFund > 0 ? Math.min(Math.round((taxSav / recommendedEFund) * 100), 100) : 0;
+
+    // Market scenarios
+    var optimisticPortfolio = Math.round(projectedPortfolio * 1.25);
+    var conservativePortfolio = Math.round(projectedPortfolio * 0.74);
+    var optimisticAnnInc = Math.round(optimisticPortfolio * 0.04);
+    var conservativeAnnInc = Math.round(conservativePortfolio * 0.04);
+    var optimisticReplacement = retIncome > 0
+      ? Math.min(Math.round(((optimisticAnnInc + ssa70) / retIncome) * 100), 100) : 94;
+    var conservativeReplacement = retIncome > 0
+      ? Math.round(((conservativeAnnInc + ssa67) / retIncome) * 100) : 69;
+
     var today = new Date();
     var monthStr = today.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
+    var recContribRate = Math.max(contribRateNum + 4, 12);
+
     return {
+      // Cover / profile
       clientName: fd.fullName || "Client",
+      employer: fd.employer || "",
       date: monthStr,
       preparedBy: "WINTRICE Retirement Intelligence System",
       maritalStatus: fd.maritalStatus,
+      dependents: dependentsNum,
       currentAge: currentAge,
       retirementAge: retireAgeNum,
       retirementAgeGoal: retireAgeNum,
-      lifeExpectancy: 92,
+      lifeExpectancy: lifeExpNum,
       annualSalary: salary,
-      annualSalaryGrowth: 0.03,
+      annualSalaryGrowth: salaryGrowthNum,
+      salaryGrowth: salaryGrowthNum,
       currentRetirementSavings: planBal,
       monthlyRetirementContribution: monthlyContrib,
       employerMatch: empMatchNum,
@@ -1182,55 +1396,144 @@ export default function RetirementPlan() {
       hasIRA: fd.hasIRA,
       iraBalance: iraBal,
       taxableSavings: taxSav,
-      targetRetirementIncome: retIncome,
-      projectedNeededIncome: retIncome,
-      lifestyle: fd.lifestyle,
-      confidenceScore: fd.confidence,
-      inflationRate: fd.inflationRate,
-      projectedPortfolio67: projectedPortfolio,
-      estimatedAnnualRetIncome: estimatedAnnualRetIncome,
-      retirementIncomeGap: retirementIncomeGap,
-      ssa67: ssa67,
-      ssa70: ssa70,
-      breakEvenAge: 81,
-      netWorth: totalAssets,
+
+      // Page 3: Health Scorecard
+      wintriceScore: 72,
+      savingsRateScore: savingsRateScore,
+      debtRatioScore: 68,
+      investmentAllocScore: 70,
+      emergencyFundScore: Math.max(efundPct, 10),
+      retirementReadinessScore: 72,
+
+      // Page 4: Net Worth
+      netWorth: netWorthCalc,
       assets: [
         { label: "401(k) / Employer Plan", value: planBal },
         { label: "IRA Accounts", value: iraBal },
         { label: "Taxable / Brokerage", value: taxSav },
       ],
+      liabilities: [],
       totalAssets: totalAssets,
       totalLiabilities: 0,
-      monthlyIncome: monthlyIncome,
-      monthlyExpenses: monthlyExpenses,
+
+      // Page 5: Cash Flow
+      monthlyIncome: monthlyIncomeVal,
+      monthlyExpenses: monthlyExpensesVal,
       monthlySurplus: monthlySurplus,
+
+      // Page 6: Emergency Fund
       monthlyCoreExpenses: monthlyCoreExp,
       recommendedEFund: recommendedEFund,
       liquidSavings: taxSav,
-      efundStatus: recommendedEFund > 0 ? Math.min(Math.round((taxSav / recommendedEFund) * 100), 100) : 0,
+      efundStatus: efundPct,
+
+      // Page 7: Debt
       debtToIncomeRatio: 32,
-      riskProfile: fd.confidence >= 4 ? "Aggressive Growth" : fd.confidence >= 3 ? "Moderate Growth" : "Conservative",
+      dtiRatio: 32,
+      loanPayoffYears: 4,
+      mortgageYears: 25,
+
+      // Page 8: Investment Allocation
       allocation: [
         { label: "U.S. Stocks", percent: 60 },
         { label: "International Stocks", percent: 15 },
         { label: "Bonds", percent: 20 },
         { label: "Cash", percent: 5 },
       ],
-      salaryToday: salary,
-      salaryFuture: salaryFuture,
-      chancePast90: 38,
-      chancePast95: 16,
-      portfolioLastsTo: 93,
-      taxRate: 22,
+      riskProfile: fd.confidence >= 4 ? "Aggressive Growth" : fd.confidence >= 3 ? "Moderate Growth" : "Conservative",
+
+      // Page 9: Risk Tolerance
+      riskCapacity: fd.confidence >= 4 ? "Aggressive" : "Moderate",
+      riskBehavior: fd.confidence >= 4 ? "Growth Oriented" : "Slightly Conservative",
+      portfolioAlignment: 85,
+      confidenceScore: fd.confidence,
+
+      // Page 10: Retirement Projection
+      projectedPortfolio67: projectedPortfolio,
+      estimatedAnnualRetIncome: estimatedAnnualRetIncome,
+      retirementProjStartAge: currentAge ?? retireAgeNum - yearsToRetire,
+      retirementProjEndAge: retireAgeNum,
+
+      // Page 11: Retirement Income Gap
+      targetRetirementIncome: retIncome,
+      projectedNeededIncome: retIncome,
+      retirementIncomeGap: retirementIncomeGap,
+      gapCoverage: gapCoverage,
+
+      // Page 12: Savings Adjustment
+      savingsIncrease: savingsIncrease,
+      delayRetirementYears: delayRetirementYears,
+
+      // Page 13: Social Security
+      ssa67: ssa67,
+      ssa70: ssa70,
+      breakEvenAge: 81,
+
+      // Page 14: Plan Optimization
+      currentContribution: contribRateNum / 100,
+      recommendedContribution: recContribRate / 100,
+      employerMatchStatus: "Maximized",
+
+      // Page 15: Tax Optimization
+      taxRate: taxRateNum,
       traditionalPercent: 60,
       rothPercent: 40,
       lifetimeTaxSavings: 112000,
+
+      // Page 16: Inflation
+      inflationRate: fd.inflationRate,
+      inflation: fd.inflationRate,
+      salaryToday: salary,
+      salaryFuture: salaryFuture,
+
+      // Page 17: Longevity
+      chancePast90: 38,
+      chancePast95: 16,
+      portfolioLastsTo: 93,
+
+      // Page 18: Healthcare
+      healthcareAnnual: 18500,
+      healthcareLifetime: 310000,
+
+      // Page 19: Insurance
+      lifeInsurance: lifeInsVal,
+      recommendedInsurance: recommendedInsurance,
+      disabilityCoverage: "60% Income Replacement",
+      insuranceGap: insuranceGap,
+
+      // Page 20: College Planning
+      children: childrenNum,
+      collegeCost: collegeTotalCost || 240000,
+      savings529: savings529Val,
+      collegeGap: collegeGap || 180000,
+
+      // Page 21–22: Market Scenarios
+      optimisticPortfolio: optimisticPortfolio,
+      optimisticReplacement: optimisticReplacement,
+      conservativePortfolio: conservativePortfolio,
+      conservativeReplacement: conservativeReplacement,
+
+      // Page 23–24: Action Plan
       actionPlan: [
-        "Increase retirement contribution to " + (Math.max(contribRateNum + 4, 12)) + "%",
+        "Increase retirement contribution to " + recContribRate + "%",
         "Build emergency fund to $" + recommendedEFund.toLocaleString(),
-        "Review and optimize life insurance coverage",
+        "Increase life insurance by $" + insuranceGap.toLocaleString(),
         "Rebalance portfolio annually",
       ],
+      roadmap: [
+        { quarter: "Quarter 1", steps: ["Increase contribution " + (contribRateNum + 2) + "%", "Rebalance portfolio"] },
+        { quarter: "Quarter 2", steps: ["Open Roth IRA"] },
+        { quarter: "Quarter 3", steps: ["Adjust insurance"] },
+        { quarter: "Quarter 4", steps: ["Review tax positioning"] },
+      ],
+
+      // Page 25: Disclosures
+      assumedReturn: annReturnNum * 100,
+      retireAge: retireAgeNum,
+      lifeExp: lifeExpNum,
+
+      // Lifestyle / misc
+      lifestyle: fd.lifestyle,
     };
   }
 

@@ -3,20 +3,29 @@ import { useDownloadReport } from "../hooks/mutations/allMutation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ReportData {
+  savingsRateScore: null;
+  debtRatioScore: number;
+  investmentAllocScore: number;
+  emergencyFundScore: number;
+  retirementReadinessScore: number;
   // Cover
   clientName?: string;
+  employer?: string;
   preparedFor?: string;
   date?: string;
   preparedBy?: string;
-  // Profile (nested in "profile" key in the array format)
+  // Profile
   name?: string;
   age?: number;
+  currentAge?: number;
   retirementAgeGoal?: number;
   retirementAge?: number;
   lifeExpectancy?: number;
   maritalStatus?: string;
+  dependents?: number;
   annualSalary?: number;
   annualSalaryGrowth?: number;
+  salaryGrowth?: number;
   currentRetirementSavings?: number;
   monthlyRetirementContribution?: number;
   employerMatch?: number;
@@ -26,6 +35,7 @@ interface ReportData {
   monthlySurplus?: number;
   // Net worth
   assets?: { label: string; value: number }[];
+  liabilities?: { label: string; value: number }[];
   totalAssets?: number;
   totalLiabilities?: number;
   netWorth?: number;
@@ -37,22 +47,38 @@ interface ReportData {
   // Debt
   debtToIncomeRatio?: number;
   dtiRatio?: number;
+  loanPayoffYears?: number;
+  mortgageYears?: number;
   // Allocation
   allocation?: { label: string; percent: number }[];
   riskProfile?: string;
+  // Risk tolerance
+  riskCapacity?: string;
+  riskBehavior?: string;
+  portfolioAlignment?: number;
   // Projection
   projectedPortfolio67?: number | null;
   estimatedAnnualRetIncome?: number | null;
+  retirementProjStartAge?: number;
+  retirementProjEndAge?: number;
   // Income gap
   projectedNeededIncome?: number;
   targetRetirementIncome?: number;
   projectedIncome?: number | null;
   annualGap?: number;
   retirementIncomeGap?: number;
+  gapCoverage?: number;
+  // Savings adjustment
+  savingsIncrease?: number;
+  delayRetirementYears?: number;
   // Social Security
   ssa67?: number;
   ssa70?: number;
   breakEvenAge?: number;
+  // Plan optimization
+  currentContribution?: number;
+  recommendedContribution?: number;
+  employerMatchStatus?: string;
   // Tax
   taxRate?: number;
   traditionalPercent?: number;
@@ -62,13 +88,37 @@ interface ReportData {
   inflationRate?: number;
   inflation?: number;
   salaryToday?: number;
+  salaryFuture?: number;
   // Longevity
   chancePast90?: number;
   chancePast95?: number;
   portfolioLastsTo?: number;
+  // Healthcare
+  healthcareAnnual?: number;
+  healthcareLifetime?: number;
+  // Insurance
+  lifeInsurance?: number;
+  recommendedInsurance?: number;
+  disabilityCoverage?: string;
+  insuranceGap?: number;
+  // College
+  children?: number;
+  collegeCost?: number;
+  savings529?: number;
+  collegeGap?: number;
+  // Market scenarios
+  optimisticPortfolio?: number;
+  optimisticReplacement?: number;
+  conservativePortfolio?: number;
+  conservativeReplacement?: number;
   // Action plan
   actionPlan?: string[];
+  roadmap?: { quarter: string; steps: string[] }[];
   stressTestResult?: string;
+  // Disclosures (Page 25 explicit fields)
+  assumedReturn?: number;
+  retireAge?: number;
+  lifeExp?: number;
   // Misc
   contribRate?: number;
   confidenceScore?: number;
@@ -85,7 +135,9 @@ const getRetAge = (d: ReportData): number => d.retirementAgeGoal ?? d.retirement
 
 const getYears = (d: ReportData): number => {
   const retAge = getRetAge(d);
-  const cur = d.age != null && d.age > 0 && d.age < 110 ? d.age : null;
+  const cur = d.age != null && d.age > 0 && d.age < 110 ? d.age
+    : d.currentAge != null && d.currentAge > 0 && d.currentAge < 110 ? d.currentAge
+      : null;
   return cur != null ? Math.max(retAge - cur, 1) : 32;
 };
 
@@ -123,7 +175,7 @@ const ExportBtn = ({ onDownload, isDownloading }: { onDownload?: () => void; isD
     disabled={isDownloading}
     className="flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-gray-700 transition-colors print:hidden disabled:opacity-60"
   >
-    {isDownloading ? "⏳ Downloading..." : "🖨 Export to PDF"}
+    {isDownloading ? "⏳ Downloading..." : "🖨 Download financial report"}
   </button>
 );
 
@@ -194,9 +246,11 @@ const Page1 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
 // ─── PAGE 2: Personal Profile Summary ─────────────────────────────────────────
 const Page2 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const retAge = getRetAge(d);
-  const curAge = d.age != null && d.age > 0 && d.age < 110 ? String(d.age) : "—";
+  const curAge = (d.currentAge ?? d.age);
+  const curAgeStr = curAge != null && curAge > 0 && curAge < 110 ? String(curAge) : "—";
   const status = d.maritalStatus ? d.maritalStatus.charAt(0).toUpperCase() + d.maritalStatus.slice(1) : "—";
-  const growth = d.annualSalaryGrowth != null ? (d.annualSalaryGrowth * 100).toFixed(0) + "%" : "3%";
+  const growth = d.annualSalaryGrowth != null ? (d.annualSalaryGrowth * 100).toFixed(0) + "%" :
+    d.salaryGrowth != null ? (d.salaryGrowth * 100).toFixed(0) + "%" : "3%";
   const match = d.employerMatch != null ? (d.employerMatch * 100).toFixed(0) + "%" : "4%";
   return (
     <PageWrap>
@@ -208,10 +262,11 @@ const Page2 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
           {
             heading: "PERSONAL & RETIREMENT",
             rows: [
-              ["Current Age", curAge],
+              ["Current Age", curAgeStr],
               ["Retirement Goal Age", String(retAge)],
               ["Life Expectancy", String(d.lifeExpectancy ?? 92)],
               ["Marital Status", status],
+              ["Dependents", String(d.dependents ?? "—")],
             ] as [string, string][],
           },
           {
@@ -246,8 +301,9 @@ const Page2 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
 // ─── PAGE 3: Financial Health Scorecard ───────────────────────────────────────
 const Page3 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const efund = Math.min(d.efundStatus ?? 0, 100);
-  const savRate = d.monthlySurplus && d.monthlyIncome
-    ? Math.min(Math.round((d.monthlySurplus / d.monthlyIncome) * 100 * 3), 90) : 65;
+  const savRate = d.savingsRateScore != null ? d.savingsRateScore :
+    d.monthlySurplus && d.monthlyIncome
+      ? Math.min(Math.round((d.monthlySurplus / d.monthlyIncome) * 100 * 3), 90) : 65;
   return (
     <PageWrap>
       <PageHeader section="Section 2.0: Cash Flow" onDownload={onDownload} isDownloading={isDownloading} />
@@ -273,11 +329,11 @@ const Page3 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
           <span className="text-[10px] tracking-widest text-gray-400 uppercase">SCORE</span>
         </div>
         {([
-          ["Savings Rate", savRate],
-          ["Debt Ratio", 68],
-          ["Investment Allocation", 70],
-          ["Emergency Fund", Math.max(efund, 10)],
-          ["Retirement Readiness", 72],
+          ["Savings Rate", d.savingsRateScore ?? savRate],
+          ["Debt Ratio", d.debtRatioScore ?? 68],
+          ["Investment Allocation", d.investmentAllocScore ?? 70],
+          ["Emergency Fund", d.emergencyFundScore ?? Math.max(efund, 10)],
+          ["Retirement Readiness", d.retirementReadinessScore ?? 72],
         ] as [string, number][]).map(([cat, score]) => (
           <div key={cat} className="grid grid-cols-[1fr_auto] py-3 border-b border-gray-50 text-sm">
             <span className="text-gray-800">{cat}</span>
@@ -293,8 +349,9 @@ const Page3 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
 // ─── PAGE 4: Net Worth Statement ───────────────────────────────────────────────
 const Page4 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const assets = d.assets ?? [];
+  const liabilities = d.liabilities ?? [];
   const totalA = d.totalAssets ?? assets.reduce((s, a) => s + a.value, 0);
-  const totalL = d.totalLiabilities ?? 0;
+  const totalL = d.totalLiabilities ?? liabilities.reduce((s, l) => s + l.value, 0);
   const nw = d.netWorth ?? (totalA - totalL);
   return (
     <PageWrap>
@@ -325,10 +382,17 @@ const Page4 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
             <div className="flex justify-between px-4 py-2.5 bg-gray-50 text-xs text-gray-400 font-bold uppercase tracking-wide">
               <span>Type</span><span>Value</span>
             </div>
-            <div className="flex justify-between px-4 py-3.5 border-t border-gray-100 text-sm">
-              <span className="text-gray-500">Total Liabilities</span>
-              <span className="font-semibold">{fmt(totalL)}</span>
-            </div>
+            {liabilities.length > 0 ? liabilities.map(({ label, value }) => (
+              <div key={label} className="flex justify-between px-4 py-3.5 border-t border-gray-100 text-sm">
+                <span className="text-gray-500">{label}</span>
+                <span className="font-semibold">{fmt(value)}</span>
+              </div>
+            )) : (
+              <div className="flex justify-between px-4 py-3.5 border-t border-gray-100 text-sm">
+                <span className="text-gray-500">Total Liabilities</span>
+                <span className="font-semibold">{fmt(totalL)}</span>
+              </div>
+            )}
             <div className="flex justify-between px-4 py-3.5 border-t border-gray-200 bg-gray-50">
               <span className="font-bold text-sm">Net Worth</span>
               <span className="font-black text-base text-gray-900">{fmt(nw)}</span>
@@ -453,6 +517,8 @@ const Page6 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
 // ─── PAGE 7: Debt Analysis ─────────────────────────────────────────────────────
 const Page7 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const dti = d.debtToIncomeRatio ?? d.dtiRatio ?? 32;
+  const loanYears = d.loanPayoffYears ?? 4;
+  const mortYears = d.mortgageYears ?? 25;
   return (
     <PageWrap>
       <PageHeader section="Section 4.0: Liabilities & Payoff" onDownload={onDownload} isDownloading={isDownloading} />
@@ -463,7 +529,7 @@ const Page7 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
           <div className="text-4xl font-black text-gray-900 mb-2">{dti}%</div>
           <div className="text-xs font-bold text-green-600">✓ STABLE RANGE</div>
         </div>
-        {([["STUDENT LOAN PAYOFF", "4 Years", "↗ ACCELERATED PLAN"], ["MORTGAGE PAYOFF", "25 Years", "⏱ STANDARD AMORTIZATION"]] as [string, string, string][]).map(([label, val, sub]) => (
+        {([["STUDENT LOAN PAYOFF", loanYears + " Years", "↗ ACCELERATED PLAN"], ["MORTGAGE PAYOFF", mortYears + " Years", "⏱ STANDARD AMORTIZATION"]] as [string, string, string][]).map(([label, val, sub]) => (
           <div key={label} className="flex-1 bg-gray-50 rounded-xl p-5">
             <div className="text-[10px] tracking-[2px] text-gray-400 uppercase mb-2">{label}</div>
             <div className="text-3xl font-black text-gray-900 mb-2">{val}</div>
@@ -545,15 +611,18 @@ const Page8 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: (
 // ─── PAGE 9: Risk Tolerance ─────────────────────────────────────────────────────
 const Page9 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const conf = d.confidenceScore ?? 3;
+  const riskCap = d.riskCapacity ?? (conf >= 4 ? "Aggressive" : "Moderate");
+  const riskBeh = d.riskBehavior ?? (conf >= 4 ? "Growth Oriented" : "Slightly Conservative");
+  const portAlign = d.portfolioAlignment ?? 85;
   return (
     <PageWrap>
       <PageHeader section="Section 3.0: Risk" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Risk Tolerance Assessment" subtitle="Evaluation of psychological risk behavior and financial risk capacity." />
       <div className="flex gap-4 mt-8">
         {([
-          ["🗂", "RISK CAPACITY", conf >= 4 ? "Aggressive" : "Moderate"],
-          ["🧠", "RISK BEHAVIOR", conf >= 4 ? "Growth Oriented" : "Slightly Conservative"],
-          ["✅", "PORTFOLIO ALIGNMENT", "85% Aligned"],
+          ["🗂", "RISK CAPACITY", riskCap],
+          ["🧠", "RISK BEHAVIOR", riskBeh],
+          ["✅", "PORTFOLIO ALIGNMENT", portAlign + "% Aligned"],
         ] as [string, string, string][]).map(([icon, label, val]) => (
           <div key={label} className="flex-1 bg-gray-50 rounded-xl p-7">
             <div className="text-2xl mb-4">{icon}</div>
@@ -582,7 +651,7 @@ const Page10 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
   const annInc = calcAnnualIncome(d);
   const maxVal = Math.max(proj, ...bars, 1);
   const retAge = getRetAge(d);
-  const curAge = d.age != null && d.age > 0 && d.age < 110 ? d.age : retAge - n;
+  const curAge = (d.currentAge ?? d.age ?? retAge - n);
   return (
     <PageWrap>
       <PageHeader section="Section 4.0: Retirement" onDownload={onDownload} isDownloading={isDownloading} />
@@ -635,7 +704,7 @@ const Page11 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
   const tgt = calcTarget(d);
   const proj = calcAnnualIncome(d);
   const g = calcGap(d);
-  const pct = tgt > 0 ? Math.round((g / tgt) * 100) : 0;
+  const pct = d.gapCoverage ?? (tgt > 0 ? Math.round((g / tgt) * 100) : 0);
   const barH = tgt > 0 ? Math.min(Math.round((proj / tgt) * 80), 80) : 50;
   return (
     <PageWrap>
@@ -703,6 +772,8 @@ const Page12 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
   const g = calcGap(d);
   const proj = calcAnnualIncome(d);
   const tgt = calcTarget(d);
+  const savIncrease = d.savingsIncrease ?? 325;
+  const delayYrs = d.delayRetirementYears ?? 2;
   return (
     <PageWrap>
       <PageHeader section="Section 6.0: Savings Adjustment" onDownload={onDownload} isDownloading={isDownloading} />
@@ -710,8 +781,8 @@ const Page12 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
         subtitle={`Strategic paths to bridge the ${fmt(g)} annual income deficit through optimized planning.`} />
       <div className="flex gap-4 mb-6">
         {([
-          ["💰", "SCENARIO A: INCREASE SAVINGS", "Increase monthly savings by $325", "text-blue-600"],
-          ["📅", "SCENARIO B: EXTEND TIMELINE", "Delay retirement by 2 years", "text-amber-600"],
+          ["💰", "SCENARIO A: INCREASE SAVINGS", `Increase monthly savings by $${savIncrease.toLocaleString()}`, "text-blue-600"],
+          ["📅", "SCENARIO B: EXTEND TIMELINE", `Delay retirement by ${delayYrs} year${delayYrs !== 1 ? "s" : ""}`, "text-amber-600"],
         ] as [string, string, string, string][]).map(([icon, label, val, c]) => (
           <div key={label} className="flex-1 border border-gray-200 rounded-xl p-6">
             <div className="flex items-center gap-3 mb-3">
@@ -743,10 +814,10 @@ const Page12 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
         <DarkCard>
           <div className="flex items-center gap-2 mb-4"><span>✅</span><span className="font-bold text-sm">PROFESSIONAL RECOMMENDATION</span></div>
           <BlueLabel>PRIMARY RECOMMENDATION</BlueLabel>
-          <DimText><strong className="text-white">Scenario A (Increase Savings)</strong> is the most sustainable path. Increasing monthly contribution by $325 utilizes existing liquidity without lifestyle sacrifices.</DimText>
+          <DimText><strong className="text-white">Scenario A (Increase Savings)</strong> is the most sustainable path. Increasing monthly contribution by ${savIncrease.toLocaleString()} utilizes existing liquidity without lifestyle sacrifices.</DimText>
           <div className="border-t border-gray-700 mt-4 pt-4">
             <BlueLabel>THE BALANCED APPROACH</BlueLabel>
-            <DimText>A hybrid model of increasing savings by <strong className="text-white">$160/mo</strong> and delaying retirement by <strong className="text-white">12 months</strong> provides additional margin of safety.</DimText>
+            <DimText>A hybrid model of increasing savings by <strong className="text-white">${Math.round(savIncrease / 2).toLocaleString()}/mo</strong> and delaying retirement by <strong className="text-white">{Math.ceil(delayYrs / 2) * 12} months</strong> provides additional margin of safety.</DimText>
           </div>
         </DarkCard>
       </div>
@@ -810,8 +881,9 @@ const Page13 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 
 // ─── PAGE 14: Employer Plan Optimization ───────────────────────────────────────
 const Page14 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
-  const cur = d.contribRate ?? 8;
-  const rec = Math.max(cur + 4, 12);
+  const cur = d.contribRate ?? (d.currentContribution != null ? Math.round(d.currentContribution * 100) : 8);
+  const rec = d.recommendedContribution != null ? Math.round(d.recommendedContribution * 100) : Math.max(cur + 4, 12);
+  const matchStatus = d.employerMatchStatus ?? "Maximized";
   const matchPct = d.employerMatch != null ? (d.employerMatch * 100).toFixed(0) + "%" : "4%";
   const proj = calcPortfolio(d);
   const recProj = Math.round(proj * 1.27);
@@ -823,7 +895,7 @@ const Page14 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
         {([
           ["CURRENT CONTRIBUTION", cur + "%", "📺", "BASE RATE MAINTAINED", "bg-gray-50 border-gray-200", "text-gray-500", "text-gray-400"],
           ["RECOMMENDED CONTRIBUTION", rec + "%", "📈", "+4% Delta Increase", "bg-blue-50 border-blue-600", "text-blue-600", "text-blue-500"],
-          ["EMPLOYER MATCH CAPTURE", "Maximized", "✅", "SUCCESS", "bg-green-50 border-green-200", "text-gray-900", "text-green-600"],
+          ["EMPLOYER MATCH CAPTURE", matchStatus, "✅", "SUCCESS", "bg-green-50 border-green-200", "text-gray-900", "text-green-600"],
         ] as [string, string, string, string, string, string, string][]).map(([label, val, icon, sub, bgBorderCls, valC, subC]) => (
           <div key={label} className={`flex-1 border-2 rounded-xl p-6 ${bgBorderCls}`}>
             <div className="flex justify-between items-start mb-3">
@@ -917,7 +989,6 @@ const Page15 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 
 // ─── PAGE 16: Inflation Impact ─────────────────────────────────────────────────
 const Page16 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
-  // ALWAYS recompute salaryFuture locally — the stored value can be astronomically wrong
   const inflRate = d.inflationRate ?? (typeof d.inflation === "number" ? d.inflation : 0.03);
   const years = Math.min(getYears(d), 40);
   const salNow = d.salaryToday ?? d.annualSalary ?? 95000;
@@ -1009,151 +1080,172 @@ const Page17 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 };
 
 // ─── PAGE 18: Healthcare ────────────────────────────────────────────────────────
-const Page18 = ({ onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
-  <PageWrap>
-    <PageHeader section="Healthcare Planning Strategy" onDownload={onDownload} isDownloading={isDownloading} />
-    <SectionTitle title="Healthcare Cost Projection"
-      subtitle="Modeling medical expenditure and supplemental coverage requirements over the retirement horizon." />
-    <div className="flex gap-4 mb-6">
-      {([["ESTIMATED ANNUAL COST (AT AGE 67)", "$18,500", "border-red-500"], ["PROJECTED LIFETIME HEALTHCARE COST", "$310,000", "border-purple-500"]] as [string, string, string][]).map(([label, val, border]) => (
-        <div key={label} className={`flex-1 bg-gray-50 rounded-lg p-6 border-l-4 ${border}`}>
-          <div className="text-[10px] tracking-[2px] text-gray-400 uppercase mb-2">{label}</div>
-          <div className="text-3xl font-black text-gray-900">{val}</div>
-        </div>
-      ))}
-    </div>
-    <div className="grid grid-cols-2 gap-6">
-      <div className="border border-gray-200 rounded-xl p-6">
-        <div className="font-bold text-sm mb-4">Cost Breakdown by Category</div>
-        {([
-          ["Medicare Premiums", "$5,800", "w-[31%]"],
-          ["Supplemental Insurance", "$4,200", "w-[23%]"],
-          ["Prescription Drugs", "$3,600", "w-[19%]"],
-          ["Dental & Vision", "$2,100", "w-[11%]"],
-          ["Long-Term Care Reserve", "$2,800", "w-[15%]"],
-        ] as [string, string, string][]).map(([label, amt, w]) => (
-          <div key={label} className="mb-3">
-            <div className="flex justify-between text-sm mb-1.5"><span className="text-gray-700">{label}</span><span className="font-bold">{amt}</span></div>
-            <div className="h-1.5 bg-gray-100 rounded-full"><div className={`h-1.5 bg-red-400 rounded-full ${w}`} /></div>
+const Page18 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
+  const annCost = d.healthcareAnnual ?? 18500;
+  const lifeCost = d.healthcareLifetime ?? 310000;
+  return (
+    <PageWrap>
+      <PageHeader section="Healthcare Planning Strategy" onDownload={onDownload} isDownloading={isDownloading} />
+      <SectionTitle title="Healthcare Cost Projection"
+        subtitle="Modeling medical expenditure and supplemental coverage requirements over the retirement horizon." />
+      <div className="flex gap-4 mb-6">
+        {([["ESTIMATED ANNUAL COST (AT AGE 67)", fmt(annCost), "border-red-500"], ["PROJECTED LIFETIME HEALTHCARE COST", fmt(lifeCost), "border-purple-500"]] as [string, string, string][]).map(([label, val, border]) => (
+          <div key={label} className={`flex-1 bg-gray-50 rounded-lg p-6 border-l-4 ${border}`}>
+            <div className="text-[10px] tracking-[2px] text-gray-400 uppercase mb-2">{label}</div>
+            <div className="text-3xl font-black text-gray-900">{val}</div>
           </div>
         ))}
       </div>
-      <DarkCard>
-        <BlueLabel>HSA STRATEGY</BlueLabel>
-        <DimText>Maximizing your Health Savings Account creates a triple-tax advantage. With $310,000 in projected lifetime costs, front-loading your HSA during working years provides a dedicated healthcare fund with significant tax savings.</DimText>
-        <div className="bg-red-900/20 border border-red-600 rounded-lg p-4 mt-4">
-          <div className="text-xs font-bold text-red-300 mb-1">RECOMMENDED HSA ANNUAL CONTRIBUTION</div>
-          <div className="text-3xl font-black text-red-400">$4,300 / yr</div>
-          <div className="text-[10px] text-red-400">2026 IRS Maximum (Family)</div>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="border border-gray-200 rounded-xl p-6">
+          <div className="font-bold text-sm mb-4">Cost Breakdown by Category</div>
+          {([
+            ["Medicare Premiums", "$5,800", "w-[31%]"],
+            ["Supplemental Insurance", "$4,200", "w-[23%]"],
+            ["Prescription Drugs", "$3,600", "w-[19%]"],
+            ["Dental & Vision", "$2,100", "w-[11%]"],
+            ["Long-Term Care Reserve", "$2,800", "w-[15%]"],
+          ] as [string, string, string][]).map(([label, amt, w]) => (
+            <div key={label} className="mb-3">
+              <div className="flex justify-between text-sm mb-1.5"><span className="text-gray-700">{label}</span><span className="font-bold">{amt}</span></div>
+              <div className="h-1.5 bg-gray-100 rounded-full"><div className={`h-1.5 bg-red-400 rounded-full ${w}`} /></div>
+            </div>
+          ))}
         </div>
-      </DarkCard>
-    </div>
-    <PageFooter page={18} />
-  </PageWrap>
-);
+        <DarkCard>
+          <BlueLabel>HSA STRATEGY</BlueLabel>
+          <DimText>Maximizing your Health Savings Account creates a triple-tax advantage. With {fmt(lifeCost)} in projected lifetime costs, front-loading your HSA during working years provides a dedicated healthcare fund with significant tax savings.</DimText>
+          <div className="bg-red-900/20 border border-red-600 rounded-lg p-4 mt-4">
+            <div className="text-xs font-bold text-red-300 mb-1">RECOMMENDED HSA ANNUAL CONTRIBUTION</div>
+            <div className="text-3xl font-black text-red-400">$4,300 / yr</div>
+            <div className="text-[10px] text-red-400">2026 IRS Maximum (Family)</div>
+          </div>
+        </DarkCard>
+      </div>
+      <PageFooter page={18} />
+    </PageWrap>
+  );
+};
 
 // ─── PAGE 19: Insurance ─────────────────────────────────────────────────────────
-const Page19 = ({ onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
-  <PageWrap>
-    <PageHeader section="Section 12.0: Insurance" onDownload={onDownload} isDownloading={isDownloading} />
-    <SectionTitle title="Insurance Coverage Review"
-      subtitle="Assessing mortality and morbidity risks to ensure family lifestyle continuity and asset protection." />
-    <div className="flex gap-4 mb-6">
-      {([
-        ["CURRENT LIFE INSURANCE", "$500,000", "border-blue-600", "text-blue-600"],
-        ["RECOMMENDED COVERAGE", "$850,000", "border-emerald-500", "text-emerald-600"],
-        ["DISABILITY COVERAGE", "60% of Salary", "border-purple-500", "text-purple-600"],
-        ["COVERAGE GAP", "$350,000 ▲", "border-red-500", "text-red-600"],
-      ] as [string, string, string, string][]).map(([label, val, borderCls, textCls]) => (
-        <div key={label} className={`flex-1 bg-gray-50 rounded-lg p-5 border-l-4 ${borderCls}`}>
-          <div className={`text-[10px] tracking-[2px] uppercase font-bold mb-2 ${textCls}`}>{label}</div>
-          <div className={`text-xl font-black ${textCls}`}>{val}</div>
-        </div>
-      ))}
-    </div>
-    <div className="grid grid-cols-2 gap-6">
-      <div className="border border-gray-200 rounded-xl p-6">
-        <div className="font-bold text-sm mb-5">Coverage Analysis</div>
-        <div className="mb-5">
-          <div className="flex justify-between text-sm mb-2"><span>Current Coverage</span><span className="font-bold">$500,000</span></div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-3 bg-blue-600 rounded-full w-[59%]" /></div>
-        </div>
-        <div>
-          <div className="flex justify-between text-sm mb-2"><span>Recommended Coverage</span><span className="font-bold text-emerald-600">$850,000</span></div>
-          <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div className="flex h-3"><div className="bg-blue-600 h-3 w-[59%]" /><div className="bg-yellow-300 h-3 w-[41%]" /></div>
-          </div>
-          <div className="text-xs text-red-500 mt-1.5">△ Coverage Gap: $350,000</div>
-        </div>
-      </div>
-      <DarkCard>
-        <BlueLabel>COVERAGE RECOMMENDATION</BlueLabel>
-        <DimText>Your household needs 10–12x gross income in life coverage. The current policy covers only ~5x. A term policy increase aligns with institutional household protection standards.</DimText>
-        <div className="border-t border-gray-700 mt-4 pt-4">
-          <BlueLabel>TERM LIFE ESTIMATE</BlueLabel>
-          <DimText>A 20-year term policy for $350,000 in additional coverage is estimated at <strong className="text-white">$45–$65/month</strong> — a highly cost-effective solution.</DimText>
-        </div>
-      </DarkCard>
-    </div>
-    <PageFooter page={19} />
-  </PageWrap>
-);
-
-// ─── PAGE 20: College Planning ──────────────────────────────────────────────────
-const Page20 = ({ onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => (
-  <PageWrap>
-    <PageHeader section="Section 11.0: College Planning" onDownload={onDownload} isDownloading={isDownloading} />
-    <SectionTitle title="College Planning Analysis"
-      subtitle="Strategic framework for educational funding and asset accumulation across multi-generational milestones." />
-    <div className="flex gap-4 mb-6">
-      {([
-        ["🎓", "Number of Children", "2", "text-gray-900"],
-        ["💰", "Projected 4-Year Cost", "$240,000", "text-blue-600"],
-        ["📊", "529 Current Balance", "$15,000", "text-emerald-600"],
-        ["⚠️", "Funding Gap", "$180,000", "text-red-600"],
-      ] as [string, string, string, string][]).map(([icon, label, val, c]) => (
-        <div key={label} className="flex-1 border border-gray-200 rounded-lg p-5">
-          <div className="text-sm mb-2">{icon}</div>
-          <div className="text-xs text-gray-400 mb-1.5">{label}</div>
-          <div className={`text-xl font-black ${c}`}>{val}</div>
-        </div>
-      ))}
-    </div>
-    <div className="grid grid-cols-2 gap-6">
-      <div className="border border-gray-200 rounded-xl p-6">
-        <div className="font-bold text-sm mb-4">Savings Timeline Per Child</div>
+const Page19 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
+  const lifeIns = d.lifeInsurance ?? 500000;
+  const recIns = d.recommendedInsurance ?? 850000;
+  const disabCov = d.disabilityCoverage ?? "60% Income Replacement";
+  const insGap = d.insuranceGap ?? Math.max(recIns - lifeIns, 0);
+  return (
+    <PageWrap>
+      <PageHeader section="Section 12.0: Insurance" onDownload={onDownload} isDownloading={isDownloading} />
+      <SectionTitle title="Insurance Coverage Review"
+        subtitle="Assessing mortality and morbidity risks to ensure family lifestyle continuity and asset protection." />
+      <div className="flex gap-4 mb-6">
         {([
-          ["Child 1 (Age 5)", "13 years to college", "$867/mo needed", "w-[55%]"],
-          ["Child 2 (Age 3)", "15 years to college", "$720/mo needed", "w-[40%]"],
-        ] as [string, string, string, string][]).map(([name, timeline, monthly, w]) => (
-          <div key={name} className="mb-5">
-            <div className="flex justify-between text-sm mb-1"><strong>{name}</strong><span className="text-gray-400 text-xs">{timeline}</span></div>
-            <div className="text-xs text-blue-600 mb-1.5">{monthly}</div>
-            <div className="h-2 bg-gray-100 rounded-full"><div className={`h-2 bg-blue-600 rounded-full ${w}`} /></div>
+          ["CURRENT LIFE INSURANCE", fmt(lifeIns), "border-blue-600", "text-blue-600"],
+          ["RECOMMENDED COVERAGE", fmt(recIns), "border-emerald-500", "text-emerald-600"],
+          ["DISABILITY COVERAGE", disabCov, "border-purple-500", "text-purple-600"],
+          ["COVERAGE GAP", fmt(insGap) + " ▲", "border-red-500", "text-red-600"],
+        ] as [string, string, string, string][]).map(([label, val, borderCls, textCls]) => (
+          <div key={label} className={`flex-1 bg-gray-50 rounded-lg p-5 border-l-4 ${borderCls}`}>
+            <div className={`text-[10px] tracking-[2px] uppercase font-bold mb-2 ${textCls}`}>{label}</div>
+            <div className={`text-xl font-black ${textCls}`}>{val}</div>
           </div>
         ))}
       </div>
-      <DarkCard>
-        <BlueLabel>529 OPTIMIZATION STRATEGY</BlueLabel>
-        <DimText>With a combined funding gap of $180,000, we recommend opening individual 529 plans per child. A combined monthly contribution of <strong className="text-white">$400–$500</strong> today will close the gap.</DimText>
-        <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4 mt-4">
-          <div className="text-xs font-bold text-blue-300 mb-1">RECOMMENDED MONTHLY CONTRIBUTION</div>
-          <div className="text-3xl font-black text-blue-400">$450 / mo</div>
-          <div className="text-[10px] text-blue-400">Split across both children's 529 plans</div>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="border border-gray-200 rounded-xl p-6">
+          <div className="font-bold text-sm mb-5">Coverage Analysis</div>
+          <div className="mb-5">
+            <div className="flex justify-between text-sm mb-2"><span>Current Coverage</span><span className="font-bold">{fmt(lifeIns)}</span></div>
+            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-3 bg-blue-600 rounded-full" style={{ width: recIns > 0 ? Math.round((lifeIns / recIns) * 100) + "%" : "59%" }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-sm mb-2"><span>Recommended Coverage</span><span className="font-bold text-emerald-600">{fmt(recIns)}</span></div>
+            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div className="flex h-3">
+                <div className="bg-blue-600 h-3" style={{ width: recIns > 0 ? Math.round((lifeIns / recIns) * 100) + "%" : "59%" }} />
+                <div className="bg-yellow-300 h-3 flex-1" />
+              </div>
+            </div>
+            <div className="text-xs text-red-500 mt-1.5">△ Coverage Gap: {fmt(insGap)}</div>
+          </div>
         </div>
-      </DarkCard>
-    </div>
-    <PageFooter page={20} />
-  </PageWrap>
-);
+        <DarkCard>
+          <BlueLabel>COVERAGE RECOMMENDATION</BlueLabel>
+          <DimText>Your household needs 10–12x gross income in life coverage. The current policy covers only ~5x. A term policy increase aligns with institutional household protection standards.</DimText>
+          <div className="border-t border-gray-700 mt-4 pt-4">
+            <BlueLabel>TERM LIFE ESTIMATE</BlueLabel>
+            <DimText>A 20-year term policy for {fmt(insGap)} in additional coverage is estimated at <strong className="text-white">$45–$65/month</strong> — a highly cost-effective solution.</DimText>
+          </div>
+        </DarkCard>
+      </div>
+      <PageFooter page={19} />
+    </PageWrap>
+  );
+};
+
+// ─── PAGE 20: College Planning ──────────────────────────────────────────────────
+const Page20 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
+  const numChildren = d.children ?? 2;
+  const collegeCost = d.collegeCost ?? 240000;
+  const bal529 = d.savings529 ?? 15000;
+  const gap529 = d.collegeGap ?? Math.max(collegeCost - bal529, 0);
+  return (
+    <PageWrap>
+      <PageHeader section="Section 11.0: College Planning" onDownload={onDownload} isDownloading={isDownloading} />
+      <SectionTitle title="College Planning Analysis"
+        subtitle="Strategic framework for educational funding and asset accumulation across multi-generational milestones." />
+      <div className="flex gap-4 mb-6">
+        {([
+          ["🎓", "Number of Children", String(numChildren), "text-gray-900"],
+          ["💰", "Projected 4-Year Cost", fmt(collegeCost), "text-blue-600"],
+          ["📊", "529 Current Balance", fmt(bal529), "text-emerald-600"],
+          ["⚠️", "Funding Gap", fmt(gap529), "text-red-600"],
+        ] as [string, string, string, string][]).map(([icon, label, val, c]) => (
+          <div key={label} className="flex-1 border border-gray-200 rounded-lg p-5">
+            <div className="text-sm mb-2">{icon}</div>
+            <div className="text-xs text-gray-400 mb-1.5">{label}</div>
+            <div className={`text-xl font-black ${c}`}>{val}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="border border-gray-200 rounded-xl p-6">
+          <div className="font-bold text-sm mb-4">Savings Timeline Per Child</div>
+          {([
+            ["Child 1 (Age 5)", "13 years to college", "$867/mo needed", "w-[55%]"],
+            ["Child 2 (Age 3)", "15 years to college", "$720/mo needed", "w-[40%]"],
+          ] as [string, string, string, string][]).map(([name, timeline, monthly, w]) => (
+            <div key={name} className="mb-5">
+              <div className="flex justify-between text-sm mb-1"><strong>{name}</strong><span className="text-gray-400 text-xs">{timeline}</span></div>
+              <div className="text-xs text-blue-600 mb-1.5">{monthly}</div>
+              <div className="h-2 bg-gray-100 rounded-full"><div className={`h-2 bg-blue-600 rounded-full ${w}`} /></div>
+            </div>
+          ))}
+        </div>
+        <DarkCard>
+          <BlueLabel>529 OPTIMIZATION STRATEGY</BlueLabel>
+          <DimText>With a combined funding gap of {fmt(gap529)}, we recommend opening individual 529 plans per child. A combined monthly contribution of <strong className="text-white">$400–$500</strong> today will close the gap.</DimText>
+          <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4 mt-4">
+            <div className="text-xs font-bold text-blue-300 mb-1">RECOMMENDED MONTHLY CONTRIBUTION</div>
+            <div className="text-3xl font-black text-blue-400">$450 / mo</div>
+            <div className="text-[10px] text-blue-400">Split across both children's 529 plans</div>
+          </div>
+        </DarkCard>
+      </div>
+      <PageFooter page={20} />
+    </PageWrap>
+  );
+};
 
 // ─── PAGE 21: Optimistic Scenario ──────────────────────────────────────────────
 const Page21 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const base = calcPortfolio(d);
-  const optimistic = Math.round(base * 1.25);
+  const optimistic = d.optimisticPortfolio ?? Math.round(base * 1.25);
   const annInc = Math.round(optimistic * 0.04);
   const tgt = calcTarget(d);
-  const replacePct = tgt > 0 ? Math.min(Math.round(((annInc + (d.ssa70 ?? 34162)) / tgt) * 100), 100) : 94;
+  const replacePct = d.optimisticReplacement ?? (tgt > 0 ? Math.min(Math.round(((annInc + (d.ssa70 ?? 34162)) / tgt) * 100), 100) : 94);
   const retAge = getRetAge(d);
   return (
     <PageWrap>
@@ -1201,9 +1293,9 @@ const Page21 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 // ─── PAGE 22: Conservative Scenario ────────────────────────────────────────────
 const Page22 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const base = calcPortfolio(d);
-  const conservative = Math.round(base * 0.74);
+  const conservative = d.conservativePortfolio ?? Math.round(base * 0.74);
   const tgt = calcTarget(d);
-  const incReplace = tgt > 0 ? Math.round(((conservative * 0.04 + (d.ssa67 ?? 27550)) / tgt) * 100) : 69;
+  const incReplace = d.conservativeReplacement ?? (tgt > 0 ? Math.round(((conservative * 0.04 + (d.ssa67 ?? 27550)) / tgt) * 100) : 69);
   return (
     <PageWrap>
       <PageHeader section="Section 11.0: Scenarios" onDownload={onDownload} isDownloading={isDownloading} />
@@ -1279,35 +1371,61 @@ const Page23 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 
 // ─── PAGE 24: Roadmap ───────────────────────────────────────────────────────────
 const Page24 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
-  const cur = d.contribRate ?? 8;
-  const rec = Math.max(cur + 2, 10);
+  const cur = d.contribRate ?? (d.currentContribution != null ? Math.round(d.currentContribution * 100) : 8);
+  const rec = d.recommendedContribution != null ? Math.round(d.recommendedContribution * 100) : Math.max(cur + 2, 10);
+
+  // Use roadmap data from payload if available, otherwise fall back to defaults
+  const roadmap = d.roadmap ?? [
+    { quarter: "Quarter 1", steps: ["Increase contribution to " + rec + "%", "Rebalance portfolio to 60/20/15/5 target allocation."] },
+    { quarter: "Quarter 2", steps: ["Open Roth IRA", "Review budget and redirect surplus to emergency savings."] },
+    { quarter: "Quarter 3", steps: ["Adjust insurance", "Review 529 plans and open individual accounts."] },
+    { quarter: "Quarter 4", steps: ["Review tax positioning", "Schedule annual WINTRICE Blueprint review."] },
+  ];
+
+  const quarterDetails: Record<string, [string, string][]> = {
+    "Quarter 1": [
+      ["Increase contribution to " + rec + "%", "Boost 401(k) to " + rec + "% immediately to capture partial employer match."],
+      ["Rebalance portfolio", "Realign to 60/20/15/5 target allocation across 401(k), brokerage and cash."],
+    ],
+    "Quarter 2": [
+      ["Open Roth IRA", "Establish Roth IRA and contribute $583/month to reach the 2026 annual limit of $7,000."],
+      ["Review budget", "Redirect surplus from miscellaneous to emergency savings account."],
+    ],
+    "Quarter 3": [
+      ["Adjust insurance", "Apply for additional term life coverage. Lock in rates while young."],
+      ["Review 529 plans", "Open individual 529 accounts; automate $225/mo per child."],
+    ],
+    "Quarter 4": [
+      ["Review tax positioning", "Work with CPA on year-end Roth conversion opportunity and harvest tax losses in brokerage."],
+      ["Annual plan review", "Schedule next annual WINTRICE Blueprint review to track progress against all 25 metrics."],
+    ],
+  };
+
   return (
     <PageWrap>
       <PageHeader section="Section 12.0: Roadmap" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="12-Month Implementation Roadmap" subtitle="Retirement Intelligence System Strategic Schedule" />
       <div className="grid grid-cols-2 gap-4 mt-4">
-        {([
-          [1, "QUARTER 1", [["Increase contribution to " + rec + "%", "Boost 401(k) to " + rec + "% immediately to capture partial employer match."], ["Rebalance portfolio", "Realign to 60/20/15/5 target allocation across 401(k), brokerage and cash."]]],
-          [2, "QUARTER 2", [["Open Roth IRA", "Establish Roth IRA and contribute $583/month to reach the 2026 annual limit of $7,000."], ["Review budget", "Redirect surplus from miscellaneous to emergency savings account."]]],
-          [3, "QUARTER 3", [["Adjust insurance", "Apply for additional term life coverage. Lock in rates while young."], ["Review 529 plans", "Open individual 529 accounts; automate $225/mo per child."]]],
-          [4, "QUARTER 4", [["Review tax positioning", "Work with CPA on year-end Roth conversion opportunity and harvest tax losses in brokerage."], ["Annual plan review", "Schedule next annual WINTRICE Blueprint review to track progress against all 25 metrics."]]],
-        ] as [number, string, [string, string][]][]).map(([num, title, tasks]) => (
-          <div key={String(title)} className="border border-gray-200 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center font-black text-blue-600 text-sm">{num}</div>
-              <div className="font-black text-sm tracking-wide">{title}</div>
-            </div>
-            {tasks.map(([t, desc]) => (
-              <div key={t} className="flex gap-3 mb-4">
-                <span className="text-blue-600 text-base shrink-0">✅</span>
-                <div>
-                  <div className="font-bold text-sm mb-1">{t}</div>
-                  <div className="text-xs text-gray-400 leading-relaxed">{desc}</div>
-                </div>
+        {roadmap.map(({ quarter }, idx) => {
+          const tasks = quarterDetails[quarter] ?? roadmap[idx].steps.map((s) => [s, ""] as [string, string]);
+          return (
+            <div key={quarter} className="border border-gray-200 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center font-black text-blue-600 text-sm">{idx + 1}</div>
+                <div className="font-black text-sm tracking-wide">{quarter.toUpperCase()}</div>
               </div>
-            ))}
-          </div>
-        ))}
+              {tasks.map(([t, desc]) => (
+                <div key={t} className="flex gap-3 mb-4">
+                  <span className="text-blue-600 text-base shrink-0">✅</span>
+                  <div>
+                    <div className="font-bold text-sm mb-1">{t}</div>
+                    {desc && <div className="text-xs text-gray-400 leading-relaxed">{desc}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
       </div>
       <PageFooter page={24} />
     </PageWrap>
@@ -1317,18 +1435,23 @@ const Page24 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 // ─── PAGE 25: Disclosures ───────────────────────────────────────────────────────
 const Page25 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: () => void; isDownloading?: boolean }) => {
   const inflRate = d.inflationRate ?? (typeof d.inflation === "number" ? d.inflation : 0.03);
-  const retAge = getRetAge(d);
-  const annRet = d.expectedAnnualReturn ?? 0.065;
+  // Prefer explicit assumedReturn field; fall back to expectedAnnualReturn
+  const annRetPct = d.assumedReturn != null
+    ? d.assumedReturn
+    : (d.expectedAnnualReturn != null ? d.expectedAnnualReturn * 100 : 6.5);
+  // Prefer explicit retireAge / lifeExp disclosure fields; fall back to computed values
+  const retAge = d.retireAge ?? getRetAge(d);
+  const lifeExp = d.lifeExp ?? d.lifeExpectancy ?? 92;
   return (
     <PageWrap>
       <PageHeader section="Section 13.0: Disclosures" onDownload={onDownload} isDownloading={isDownloading} />
       <SectionTitle title="Disclosures & Assumptions" subtitle="Institutional Financial Planning Blueprint" />
       <div className="mt-4">
         {([
-          ["📈", "Assumed Return", (annRet * 100).toFixed(1) + "%"],
+          ["📈", "Assumed Return", annRetPct.toFixed(1) + "%"],
           ["🗂", "Inflation", (inflRate * 100).toFixed(1) + "%"],
           ["⏱", "Retirement Age", String(retAge)],
-          ["⏳", "Life Expectancy", String(d.lifeExpectancy ?? 92)],
+          ["⏳", "Life Expectancy", String(lifeExp)],
           ["🔒", "Social Security", "Estimated based on current law"],
         ] as [string, string, string][]).map(([icon, label, val]) => (
           <div key={label} className="flex justify-between items-center py-5 border-b border-gray-100">
@@ -1355,11 +1478,16 @@ const Page25 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 // ─── Main App ──────────────────────────────────────────────────────────────────
 export default function FinancialBlueprint() {
   const [current, setCurrent] = useState<number>(0);
-  const [reportData, setReportData] = useState<ReportData>({});
+  const [reportData, setReportData] = useState<ReportData>({
+    savingsRateScore: null,
+    debtRatioScore: 0,
+    investmentAllocScore: 0,
+    emergencyFundScore: 0,
+    retirementReadinessScore: 0
+  });
   const [rawPayload, setRawPayload] = useState<any>(null);
   const { mutate: downloadReport, isPending: isDownloading } = useDownloadReport();
 
-  // Load and parse localStorage on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem("reportData");
@@ -1368,14 +1496,18 @@ export default function FinancialBlueprint() {
       try { parsed = JSON.parse(raw); } catch { return; }
 
       if (Array.isArray(parsed)) {
-        // Flatten the array-of-pages format (doc 9 sample)
-        const merged: ReportData = {};
+        const merged: ReportData = {
+          savingsRateScore: null,
+          debtRatioScore: 0,
+          investmentAllocScore: 0,
+          emergencyFundScore: 0,
+          retirementReadinessScore: 0
+        };
         const skip = new Set(["page", "title", "section", "scorecard", "disclosures"]);
         parsed.forEach((page: any) => {
           Object.keys(page).forEach((k) => {
             if (skip.has(k)) return;
             if (k === "profile") {
-              // Flatten nested profile object
               Object.assign(merged, page.profile);
             } else if (k === "footer") {
               if (!merged.clientName && page.footer?.clientName) merged.clientName = page.footer.clientName;
@@ -1388,7 +1520,6 @@ export default function FinancialBlueprint() {
         setReportData(merged);
         setRawPayload(merged);
       } else {
-        // Direct flat object format
         setReportData(parsed);
         setRawPayload(parsed);
       }
@@ -1425,8 +1556,6 @@ export default function FinancialBlueprint() {
       {/* ── Sticky Top Navigation ── */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-lg print:hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
-
-          {/* Prev */}
           <button
             onClick={() => goTo(Math.max(0, current - 1))}
             disabled={current === 0}
@@ -1434,8 +1563,6 @@ export default function FinancialBlueprint() {
           >
             ← <span className="hidden sm:inline">Previous</span>
           </button>
-
-          {/* Page dots */}
           <div className="flex-1 flex flex-col items-center gap-1.5">
             <span className="text-xs font-bold text-gray-600 tracking-widest uppercase">
               Page {current + 1} / {total}
@@ -1450,8 +1577,6 @@ export default function FinancialBlueprint() {
               ))}
             </div>
           </div>
-
-          {/* Next */}
           <button
             onClick={() => goTo(Math.min(total - 1, current + 1))}
             disabled={current === total - 1}
