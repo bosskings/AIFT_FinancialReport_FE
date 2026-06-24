@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDownloadReport } from "../hooks/mutations/allMutation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1475,9 +1475,8 @@ const Page25 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
   );
 };
 
-// ─── Main App ──────────────────────────────────────────────────────────────────
+// ─── Main App (REFACTORED FOR CONTINUOUS SCROLL) ──────────────────────────────
 export default function FinancialBlueprint() {
-  const [current, setCurrent] = useState<number>(0);
   const [reportData, setReportData] = useState<ReportData>({
     savingsRateScore: null,
     debtRatioScore: 0,
@@ -1486,6 +1485,8 @@ export default function FinancialBlueprint() {
     retirementReadinessScore: 0
   });
   const [rawPayload, setRawPayload] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const { mutate: downloadReport, isPending: isDownloading } = useDownloadReport();
 
   useEffect(() => {
@@ -1528,12 +1529,42 @@ export default function FinancialBlueprint() {
     }
   }, []);
 
+  // Track which page is in view during scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      let closestIndex = 0;
+      let closestDistance = Infinity;
+
+      pageRefs.current.forEach((ref, index) => {
+        if (!ref) return;
+        const rect = ref.getBoundingClientRect();
+        const distance = Math.abs(rect.top);
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      setCurrentPage(closestIndex);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleDownload = () => {
     if (!rawPayload) { window.print(); return; }
     downloadReport(rawPayload, {
       onSuccess: () => { alert("Report downloaded successfully!"); },
       onError: () => { alert("Download failed. Please try again."); },
     });
+  };
+
+  const scrollToPage = (pageIndex: number) => {
+    const ref = pageRefs.current[pageIndex];
+    if (ref) {
+      ref.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const pageComponents = [
@@ -1543,43 +1574,36 @@ export default function FinancialBlueprint() {
   ];
 
   const total = pageComponents.length;
-  const PageComponent = pageComponents[current];
-
-  const goTo = (n: number) => {
-    setCurrent(n);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   return (
-    <div className="bg-slate-100 min-h-screen w-full">
-
+    <div className="bg-slate-100 w-full">
       {/* ── Sticky Top Navigation ── */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-lg print:hidden">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
           <button
-            onClick={() => goTo(Math.max(0, current - 1))}
-            disabled={current === 0}
+            onClick={() => scrollToPage(Math.max(0, currentPage - 1))}
+            disabled={currentPage === 0}
             className="flex items-center gap-2 px-5 sm:px-6 py-2.5 text-sm font-bold rounded-lg bg-gray-900 text-white disabled:opacity-30 hover:bg-gray-700 active:scale-95 transition-all"
           >
             ← <span className="hidden sm:inline">Previous</span>
           </button>
           <div className="flex-1 flex flex-col items-center gap-1.5">
             <span className="text-xs font-bold text-gray-600 tracking-widest uppercase">
-              Page {current + 1} / {total}
+              Page {currentPage + 1} / {total}
             </span>
             <div className="flex items-center gap-0.5 flex-wrap justify-center">
               {Array.from({ length: total }).map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => goTo(i)}
-                  className={`rounded-full transition-all duration-200 ${i === current ? "w-5 h-2 bg-blue-600" : "w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400"}`}
+                  onClick={() => scrollToPage(i)}
+                  className={`rounded-full transition-all duration-200 ${i === currentPage ? "w-5 h-2 bg-blue-600" : "w-1.5 h-1.5 bg-gray-300 hover:bg-gray-400"}`}
                 />
               ))}
             </div>
           </div>
           <button
-            onClick={() => goTo(Math.min(total - 1, current + 1))}
-            disabled={current === total - 1}
+            onClick={() => scrollToPage(Math.min(total - 1, currentPage + 1))}
+            disabled={currentPage === total - 1}
             className="flex items-center gap-2 px-5 sm:px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white disabled:opacity-30 hover:bg-blue-500 active:scale-95 transition-all"
           >
             <span className="hidden sm:inline">Next</span> →
@@ -1587,28 +1611,34 @@ export default function FinancialBlueprint() {
         </div>
       </div>
 
-      {/* ── Centered Page Content ── */}
-      <div className="flex justify-center py-8 px-4">
-        <div className="w-full max-w-5xl shadow-2xl rounded-lg overflow-hidden">
-          <PageComponent d={reportData} onDownload={handleDownload} isDownloading={isDownloading} />
-        </div>
+      {/* ── Scrollable Pages Container ── */}
+      <div className="flex flex-col items-center py-8 px-4 gap-8">
+        {pageComponents.map((PageComponent, index) => (
+          <div
+            key={index}
+            ref={(el) => { pageRefs.current[index] = el; }}
+            className="w-full max-w-5xl shadow-2xl rounded-lg overflow-hidden"
+            id={`page-${index}`}
+          >
+            <PageComponent d={reportData} onDownload={handleDownload} isDownloading={isDownloading} />
+          </div>
+        ))}
       </div>
 
       {/* ── Bottom Navigation ── */}
       <div className="flex justify-center items-center gap-4 pb-12 print:hidden">
         <button
-          onClick={() => goTo(Math.max(0, current - 1))}
-          disabled={current === 0}
+          onClick={() => scrollToPage(Math.max(0, currentPage - 1))}
+          disabled={currentPage === 0}
           className="px-6 py-2.5 text-sm font-bold rounded-lg bg-gray-900 text-white disabled:opacity-30 hover:bg-gray-700 transition-colors"
         >← Previous</button>
-        <span className="text-xs text-gray-400 font-semibold tracking-widest">{current + 1} / {total}</span>
+        <span className="text-xs text-gray-400 font-semibold tracking-widest">{currentPage + 1} / {total}</span>
         <button
-          onClick={() => goTo(Math.min(total - 1, current + 1))}
-          disabled={current === total - 1}
+          onClick={() => scrollToPage(Math.min(total - 1, currentPage + 1))}
+          disabled={currentPage === total - 1}
           className="px-6 py-2.5 text-sm font-bold rounded-lg bg-blue-600 text-white disabled:opacity-30 hover:bg-blue-500 transition-colors"
         >Next →</button>
       </div>
-
     </div>
   );
 }

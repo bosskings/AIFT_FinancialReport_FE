@@ -24,7 +24,7 @@ const App = () => {
               element={
                 <ProtectedRoute
                   element={
-                    <div className="flex bg-[#F8FAFC]">
+                    <div className=" bg-[#F8FAFC]">
                       <div className="">
                         <div className="">
                           <Content />
