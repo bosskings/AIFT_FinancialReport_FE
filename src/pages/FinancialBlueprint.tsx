@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useDownloadReport } from "../hooks/mutations/allMutation";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1477,6 +1478,8 @@ const Page25 = ({ d, onDownload, isDownloading }: { d: ReportData; onDownload?: 
 
 // ─── Main App (REFACTORED FOR CONTINUOUS SCROLL) ──────────────────────────────
 export default function FinancialBlueprint() {
+  const { reportId } = useParams<{ reportId: string }>();
+
   const [reportData, setReportData] = useState<ReportData>({
     savingsRateScore: null,
     debtRatioScore: 0,
@@ -1487,7 +1490,11 @@ export default function FinancialBlueprint() {
   const [rawPayload, setRawPayload] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const { mutate: downloadReport, isPending: isDownloading } = useDownloadReport();
+
+  // Fall back to localStorage in case someone refreshes and the param is somehow missing
+  const effectiveReportId = reportId ?? localStorage.getItem("reportId") ?? "1";
+
+  const { mutate: downloadReport, isPending: isDownloading } = useDownloadReport(effectiveReportId);
 
   useEffect(() => {
     try {

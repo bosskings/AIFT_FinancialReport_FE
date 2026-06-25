@@ -23,13 +23,13 @@ export const useGenerateReport = () => {
 
 
 
-export const useDownloadReport = () => {
+export const useDownloadReport = (randomInts: any) => {
   const queryClient = useQueryClient()
 
   const downloadReport = useMutation({
     mutationFn: async (data: any) => {
       const token = (await localStorage.getItem("retirementAccessToken")) || ""
-      const response = await post_request_blob(`fincanceRecord/downloadReport`, data, token)
+      const response = await post_request_blob(`fincanceRecord/downloadReport/${randomInts}`, data, token)
 
       // ── Trigger browser download from the blob ──────────────────────
       const blob = new Blob([response.data], { type: 'application/pdf' })

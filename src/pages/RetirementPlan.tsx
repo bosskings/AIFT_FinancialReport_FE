@@ -1088,7 +1088,9 @@ function Review(props: any) {
       setProgress(function (prev: any) {
         if (prev >= 100) {
           clearInterval(interval);
-          setTimeout(function () { navigate("/financial-blueprint"); }, 300);
+          setTimeout(function () {
+            navigate(`/financial-blueprint/${generatedReportId}`);
+          }, 300);
           return 100;
         }
         return prev + 2;
@@ -1101,14 +1103,38 @@ function Review(props: any) {
     setStepIdx(Math.min(Math.floor(progress / 20), loadSteps.length - 1));
   }, [progress]);
 
+  // function handleGenerate() {
+  //   if (!agreed || isLoading) return;
+  //   generateReport(props.payload, {
+  //     onSuccess: function (response: any) {
+  //       console.log("Report generation successful:", response);
+  //       var data = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
+  //       localStorage.setItem("reportData", data);
+  //       setReportReady(true);
+  //     },
+  //     onError: function (err: any) {
+  //       console.error("Report generation failed:", err);
+  //       alert("Something went wrong. Please try again.");
+  //     },
+  //   });
+  // }
+
+  let [generatedReportId, setGeneratedReportId] = useState<number | null>(null);
   function handleGenerate() {
     if (!agreed || isLoading) return;
     generateReport(props.payload, {
       onSuccess: function (response: any) {
         console.log("Report generation successful:", response);
         var data = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
+
+        // Generate the 5-digit random ID once, here
+        var reportId = Math.floor(10000 + Math.random() * 90000);
+
         localStorage.setItem("reportData", data);
+        localStorage.setItem("reportId", String(reportId)); // optional backup, e.g. for refreshes
+
         setReportReady(true);
+        setGeneratedReportId(reportId); // store in state so the redirect effect can use it
       },
       onError: function (err: any) {
         console.error("Report generation failed:", err);
