@@ -1089,7 +1089,7 @@ function Review(props: any) {
         if (prev >= 100) {
           clearInterval(interval);
           setTimeout(function () {
-            navigate(`/financial-blueprint/${generatedReportId}`);
+            navigate('/financial-blueprint');
           }, 300);
           return 100;
         }
@@ -1119,7 +1119,6 @@ function Review(props: any) {
   //   });
   // }
 
-  let [generatedReportId, setGeneratedReportId] = useState<number | null>(null);
   function handleGenerate() {
     if (!agreed || isLoading) return;
     generateReport(props.payload, {
@@ -1127,14 +1126,9 @@ function Review(props: any) {
         console.log("Report generation successful:", response);
         var data = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
 
-        // Generate the 5-digit random ID once, here
-        var reportId = Math.floor(10000 + Math.random() * 90000);
-
         localStorage.setItem("reportData", data);
-        localStorage.setItem("reportId", String(reportId)); // optional backup, e.g. for refreshes
 
         setReportReady(true);
-        setGeneratedReportId(reportId); // store in state so the redirect effect can use it
       },
       onError: function (err: any) {
         console.error("Report generation failed:", err);
