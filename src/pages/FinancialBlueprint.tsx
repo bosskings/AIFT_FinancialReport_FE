@@ -161,6 +161,158 @@ const calcAnnualIncome = (d: ReportData): number => {
 const calcTarget = (d: ReportData): number => d.projectedNeededIncome ?? d.targetRetirementIncome ?? 85000;
 const calcGap = (d: ReportData): number => Math.max(calcTarget(d) - calcAnnualIncome(d), 0);
 
+// ─── Color normalization (canvas-based) ───────────────────────────────────────
+// html2canvas cannot parse modern CSS color functions: oklch(), oklab(),
+// lch(), lab(), color(), and — critically — color-mix(), which is what every
+// Tailwind v4 opacity-modifier class (bg-white/20, text-white/60, bg-black/10,
+// etc.) compiles down to (e.g. `color-mix(in oklab, white 60%, transparent)`).
+//
+// Rather than hand-rolling color-space math (which only covers the "happy
+// path" of syntax variants), we let the browser's own <canvas> 2D context
+// parse and normalize these into rgb()/rgba() strings, which html2canvas
+// understands natively.
+//
+// We scan for these functions with a balanced-paren walk (not a regex),
+// because color-mix() calls are often nested — e.g.
+// `color-mix(in oklab, color(srgb 1 1 1) 50%, transparent)` — and a
+// `[^()]*`-style regex stops at the FIRST closing paren it sees (the inner
+// one), producing a corrupted, still-unparseable fragment. It also matters
+// that `color-mix(` isn't accidentally matched by a bare `color(` check.
+let colorNormalizationCtx: CanvasRenderingContext2D | null = null;
+const getColorCtx = (): CanvasRenderingContext2D | null => {
+  if (!colorNormalizationCtx) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    colorNormalizationCtx = canvas.getContext("2d");
+  }
+  return colorNormalizationCtx;
+};
+
+// Longest names first so "color-mix" is checked before the shorter "color".
+const UNSUPPORTED_COLOR_FN_NAMES = ["color-mix", "oklch", "oklab", "lch", "lab", "color"];
+
+const replaceUnsupportedColorFunctions = (value: string): string => {
+  if (!value) return value;
+  const lower = value.toLowerCase();
+  const hasCandidate = UNSUPPORTED_COLOR_FN_NAMES.some((name) => lower.includes(name + "("));
+  if (!hasCandidate) return value;
+
+  const ctx = getColorCtx();
+  if (!ctx) return value;
+
+  let result = "";
+  let i = 0;
+  while (i < value.length) {
+    let matchedName: string | null = null;
+    for (const name of UNSUPPORTED_COLOR_FN_NAMES) {
+      if (lower.startsWith(name + "(", i)) {
+        matchedName = name;
+        break;
+      }
+    }
+
+    if (!matchedName) {
+      result += value[i];
+      i += 1;
+      continue;
+    }
+
+    // Found `name(` — walk forward tracking paren depth so nested functions
+    // (color-mix wrapping color(), etc.) are captured as one whole match.
+    const start = i;
+    let depth = 0;
+    let j = i + matchedName.length;
+    for (; j < value.length; j++) {
+      if (value[j] === "(") depth += 1;
+      else if (value[j] === ")") {
+        depth -= 1;
+        if (depth === 0) { j += 1; break; }
+      }
+    }
+
+    const fullMatch = value.slice(start, j);
+    try {
+      // Reset first so a failed/ignored parse below doesn't silently reuse a
+      // previously-set color (invalid fillStyle assignments are a no-op).
+      ctx.fillStyle = "#000000";
+      ctx.fillStyle = fullMatch;
+      result += ctx.fillStyle; // browser normalizes this to rgb()/rgba()
+    } catch {
+      result += "#000000";
+    }
+
+    i = j;
+  }
+
+  return result;
+};
+
+const normalizeCanvasColorValue = (value: string): string => replaceUnsupportedColorFunctions(value);
+
+// ─── Final safety net ──────────────────────────────────────────────────────
+// Belt-and-suspenders: right before handing the cloned page to html2canvas,
+// walk every element's inline style and forcibly drop any property that
+// still contains an unsupported color function (e.g. a variant the parser
+// above didn't recognize). Losing one property's explicit value (it falls
+// back to inherited/default) is far better than a hard crash.
+const UNSUPPORTED_COLOR_FN_TEST = /(oklch|oklab|lch|lab|color-mix|color)\(/i;
+
+const scrubUnsupportedColors = (root: Element) => {
+  const elements: Element[] = [root, ...Array.from(root.querySelectorAll("*"))];
+  elements.forEach((el) => {
+    const style = (el as HTMLElement).style;
+    if (!style) return;
+    for (let i = style.length - 1; i >= 0; i--) {
+      const prop = style.item(i);
+      const value = style.getPropertyValue(prop);
+      if (UNSUPPORTED_COLOR_FN_TEST.test(value)) {
+        style.removeProperty(prop);
+      }
+    }
+  });
+};
+
+const removeUnsupportedColorStylesheets = (doc: Document) => {
+  Array.from(doc.querySelectorAll("style, link[rel='stylesheet']")).forEach((node) => {
+    const text = node.textContent ?? "";
+    const href = node instanceof HTMLLinkElement ? node.href : "";
+    if (
+      UNSUPPORTED_COLOR_FN_TEST.test(text) ||
+      href.includes("tailwind") ||
+      href.includes("daisyui")
+    ) {
+      node.remove();
+    }
+  });
+};
+
+const inlineCanvasSafeStyles = (source: Element, target: Element) => {
+  const targetWithStyle = target as HTMLElement | SVGElement;
+  if ("style" in targetWithStyle) {
+    const computed = window.getComputedStyle(source);
+    for (let i = 0; i < computed.length; i++) {
+      const property = computed.item(i);
+      if (property.startsWith("--")) continue;
+
+      const value = normalizeCanvasColorValue(computed.getPropertyValue(property));
+      if (UNSUPPORTED_COLOR_FN_TEST.test(value)) continue;
+
+      try {
+        targetWithStyle.style.setProperty(property, value);
+      } catch {
+        // Some browser-computed properties are read-only for SVG nodes.
+      }
+    }
+    target.removeAttribute("class");
+  }
+
+  Array.from(source.children).forEach((sourceChild, index) => {
+    const targetChild = target.children.item(index);
+    if (targetChild) inlineCanvasSafeStyles(sourceChild, targetChild);
+  });
+};
+
 // ─── Shared Components ────────────────────────────────────────────────────────
 const Logo = () => (
   <div className="flex items-center gap-2">
@@ -1484,14 +1636,21 @@ export default function FinancialBlueprint() {
   const [currentPage, setCurrentPage] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [isReportReady, setIsReportReady] = useState(false);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem("reportData");
-      if (!raw) return;
+      if (!raw) {
+        setIsReportReady(true);
+        return;
+      }
       let parsed: any;
-      try { parsed = JSON.parse(raw); } catch { return; }
+      try { parsed = JSON.parse(raw); } catch {
+        setIsReportReady(true);
+        return;
+      }
 
       if (Array.isArray(parsed)) {
         const merged: ReportData = {
@@ -1521,6 +1680,8 @@ export default function FinancialBlueprint() {
       }
     } catch (e) {
       console.error("Failed to parse reportData from localStorage:", e);
+    } finally {
+      setIsReportReady(true);
     }
   }, []);
 
@@ -1585,12 +1746,14 @@ export default function FinancialBlueprint() {
 
           exportHost.style.position = "fixed";
           exportHost.style.top = "0";
-          exportHost.style.left = "0";
+          exportHost.style.left = "-10000px";
           exportHost.style.width = `${pageWidthPx}px`;
           exportHost.style.minHeight = `${pageHeightPx}px`;
           exportHost.style.background = "#ffffff";
           exportHost.style.pointerEvents = "none";
-          exportHost.style.zIndex = "-1";
+          exportHost.style.zIndex = "2147483647";
+          exportHost.style.opacity = "1";
+          exportHost.style.visibility = "visible";
 
           clonedPage.style.width = `${pageWidthPx}px`;
           clonedPage.style.minHeight = `${pageHeightPx}px`;
@@ -1599,7 +1762,10 @@ export default function FinancialBlueprint() {
           clonedPage.style.borderRadius = "0";
           clonedPage.style.overflow = "visible";
           clonedPage.style.background = "#ffffff";
+          clonedPage.dataset.pdfExportPage = String(i);
 
+          inlineCanvasSafeStyles(element, clonedPage);
+          scrubUnsupportedColors(clonedPage);
           exportHost.appendChild(clonedPage);
           document.body.appendChild(exportHost);
 
@@ -1615,6 +1781,14 @@ export default function FinancialBlueprint() {
             scrollX: 0,
             scrollY: 0,
             logging: true,
+            onclone: (clonedDocument) => {
+              removeUnsupportedColorStylesheets(clonedDocument);
+              const clonedExportPage = clonedDocument.querySelector(`[data-pdf-export-page="${i}"]`);
+              if (clonedExportPage) {
+                scrubUnsupportedColors(clonedExportPage);
+                clonedExportPage.querySelectorAll("*").forEach((node) => node.removeAttribute("class"));
+              }
+            },
           });
 
           if (!canvas) {
@@ -1740,7 +1914,7 @@ export default function FinancialBlueprint() {
           {/* ── Download Button with Progress ── */}
           <button
             onClick={handleDownload}
-            disabled={isDownloading}
+            disabled={isDownloading || !isReportReady}
             className="relative flex items-center gap-2 bg-gray-900 text-white text-xs font-semibold px-5 py-2.5 rounded-full hover:bg-gray-700 transition-colors disabled:opacity-60 whitespace-nowrap overflow-hidden"
           >
             {isDownloading ? (
