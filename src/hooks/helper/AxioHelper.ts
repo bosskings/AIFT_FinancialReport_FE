@@ -2,20 +2,15 @@
 import axios from "axios";
 
 const BASE_URL = "https://aift-financialreport.onrender.com/api/v1/";
-// const BASE_URL = "http://127.0.0.1:8000/api/";
-
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
 });
 
-// Redirect to login whenever any request comes back 401 (expired/invalid token)
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error?.response?.status === 401) {
-      localStorage.removeItem("wintriceStudentToken");
-      // remove other token keys here too if you store tutor/admin tokens separately
-
+      localStorage.removeItem("retirementAccessToken");
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
