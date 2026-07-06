@@ -1903,6 +1903,8 @@ export default function FinancialBlueprint() {
               </>
             )}
           </button>
+
+          <a href="/dashboard" className="text-blue-600 font-bold hover:underline">Return to Dashboard</a>
         </div>
 
         {/* Progress Bar */}
