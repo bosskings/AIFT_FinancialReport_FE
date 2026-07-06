@@ -2,9 +2,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { post_request_blob, post_requests } from "../helper/AxioHelper";
 
 
-// ==================== CERTIFICATE HOOKS ====================
-
-
 export const useGenerateReport = () => {
   const queryClient = useQueryClient()
 
