@@ -4,11 +4,20 @@ import { useEffect, useRef, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ReportData {
-  savingsRateScore: null;
+  savingsRateScore: number | null;
   debtRatioScore: number;
   investmentAllocScore: number;
   emergencyFundScore: number;
   retirementReadinessScore: number;
+  // New/renamed fields the API may send
+  wintriceScore?: number;
+  planningReturn?: number;
+  portfolioType?: string;
+  currentRetirementBalance?: number;
+  retirementSavings?: number;
+  monthlyContribution?: number;
+  withdrawalRate?: number;
+  childrenDetail?: { name: string; age: number; collegeStart: number; projectedCost: number }[];
   // Cover
   clientName?: string;
   employer?: string;
@@ -125,6 +134,152 @@ interface ReportData {
   confidenceScore?: number;
   expectedAnnualReturn?: number;
 }
+
+// ─── Payload Normalization ─────────────────────────────────────────────────
+// The report-generation API's payload shape has changed over time — e.g.
+// assets/liabilities keyed by `name` instead of `label`, allocation keyed by
+// `type` instead of `label`, `children` sent as a detailed array instead of a
+// count, and several scores/ratios sent as descriptive strings, decimals, or
+// raw dollar amounts instead of the plain percentages the pages below render.
+// normalizeReportData maps whatever shape comes back onto the canonical
+// ReportData shape the page components already know how to render, so the
+// pages themselves stay untouched.
+const toNum = (v: unknown): number | undefined => {
+  if (v == null) return undefined;
+  if (typeof v === "number") return isFinite(v) ? v : undefined;
+  const match = String(v).match(/-?\d+(\.\d+)?/);
+  return match ? parseFloat(match[0]) : undefined;
+};
+
+// Accepts a value that may already be a 0-100 percent, a 0-1 fraction, or a
+// descriptive label, and returns a 0-100 percent number.
+const toPercent = (v: unknown, fallback?: number): number | undefined => {
+  const n = toNum(v);
+  if (n != null) return n > 0 && n <= 1 ? n * 100 : n;
+  return fallback;
+};
+
+const normalizeAssetList = (list: any): { label: string; value: number }[] | undefined => {
+  if (!Array.isArray(list)) return undefined;
+  return list.map((item) => ({
+    label: item?.label ?? item?.name ?? item?.type ?? "—",
+    value: toNum(item?.value) ?? 0,
+  }));
+};
+
+const normalizeAllocation = (list: any): { label: string; percent: number }[] | undefined => {
+  if (!Array.isArray(list)) return undefined;
+  return list.map((item) => ({
+    label: item?.label ?? item?.type ?? item?.name ?? "—",
+    percent: toNum(item?.percent) ?? 0,
+  }));
+};
+
+const normalizeActionPlan = (list: any): string[] | undefined => {
+  if (!Array.isArray(list)) return undefined;
+  return list.map((item) => (typeof item === "string" ? item : item?.step ?? item?.label ?? String(item)));
+};
+
+const ALIGNMENT_WORD_SCORE: Record<string, number> = {
+  weak: 55, fair: 65, moderate: 75, good: 82, strong: 90, excellent: 95,
+};
+
+const normalizeReportData = (raw: any): ReportData => {
+  const d: any = raw ?? {};
+
+  const annualSalary = toNum(d.annualSalary);
+
+  // currentContribution / recommendedContribution used to be decimal fractions
+  // of salary (e.g. 0.08). The API can now send a raw monthly dollar amount
+  // (e.g. 900) instead — detect and convert using annual salary when needed.
+  const pctFromMaybeDollar = (v: unknown): number | undefined => {
+    const n = toNum(v);
+    if (n == null) return undefined;
+    if (n <= 1) return n; // already a fraction
+    return annualSalary ? (n * 12) / annualSalary : undefined;
+  };
+
+  const recommendedEFund = toNum(d.recommendedEFund);
+  const liquidSavings = toNum(d.liquidSavings);
+  const efundStatus = (() => {
+    const n = toNum(d.efundStatus);
+    if (n != null) return n <= 1 ? n * 100 : n;
+    if (recommendedEFund && liquidSavings != null) return Math.round((liquidSavings / recommendedEFund) * 100);
+    return undefined;
+  })();
+
+  const targetRetirementIncome = toNum(d.targetRetirementIncome ?? d.projectedNeededIncome);
+  const retirementIncomeGap = toNum(d.retirementIncomeGap ?? d.annualGap);
+  const gapCoverage = (() => {
+    const n = toNum(d.gapCoverage);
+    if (n != null) return n <= 1 ? n * 100 : n;
+    if (targetRetirementIncome && retirementIncomeGap != null) {
+      return Math.round((retirementIncomeGap / targetRetirementIncome) * 100);
+    }
+    return undefined;
+  })();
+
+  const portfolioAlignment = (() => {
+    if (typeof d.portfolioAlignment === "string") {
+      return ALIGNMENT_WORD_SCORE[d.portfolioAlignment.toLowerCase()] ?? 85;
+    }
+    const n = toNum(d.portfolioAlignment);
+    return n != null ? (n <= 1 ? n * 100 : n) : undefined;
+  })();
+
+  const disabilityCoverage = (() => {
+    if (typeof d.disabilityCoverage === "string") return d.disabilityCoverage;
+    const n = toNum(d.disabilityCoverage);
+    return n != null ? `${Math.round(n <= 1 ? n * 100 : n)}% Income Replacement` : undefined;
+  })();
+
+  const childrenList = Array.isArray(d.children) ? d.children : undefined;
+
+  return {
+    ...d,
+    savingsRateScore: toNum(d.savingsRateScore) ?? null,
+    debtRatioScore: toNum(d.debtRatioScore) ?? 0,
+    investmentAllocScore: toNum(d.investmentAllocScore) ?? 0,
+    emergencyFundScore: toNum(d.emergencyFundScore) ?? 0,
+    retirementReadinessScore: toNum(d.retirementReadinessScore) ?? 0,
+
+    currentAge: toNum(d.currentAge ?? d.age),
+    retirementAge: toNum(d.retirementAge ?? d.retirementAgeGoal),
+    retirementAgeGoal: toNum(d.retirementAgeGoal ?? d.retirementAge),
+    currentRetirementSavings: toNum(d.currentRetirementSavings ?? d.currentRetirementBalance ?? d.retirementSavings),
+    monthlyRetirementContribution: toNum(d.monthlyRetirementContribution ?? d.monthlyContribution),
+    expectedAnnualReturn: toNum(d.expectedAnnualReturn ?? d.planningReturn),
+    riskProfile: d.riskProfile ?? d.portfolioType,
+
+    assets: normalizeAssetList(d.assets),
+    liabilities: normalizeAssetList(d.liabilities),
+    allocation: normalizeAllocation(d.allocation),
+
+    dtiRatio: toPercent(d.dtiRatio ?? d.debtToIncomeRatio),
+    debtToIncomeRatio: toPercent(d.debtToIncomeRatio ?? d.dtiRatio),
+
+    efundStatus,
+    portfolioAlignment,
+    gapCoverage,
+    targetRetirementIncome,
+    retirementIncomeGap,
+
+    chancePast90: toNum(d.chancePast90),
+    chancePast95: toNum(d.chancePast95),
+
+    taxRate: toPercent(d.taxRate),
+
+    currentContribution: pctFromMaybeDollar(d.currentContribution),
+    recommendedContribution: pctFromMaybeDollar(d.recommendedContribution),
+
+    disabilityCoverage,
+
+    children: childrenList ? childrenList.length : toNum(d.children),
+    childrenDetail: childrenList,
+
+    actionPlan: normalizeActionPlan(d.actionPlan) ?? d.actionPlan,
+  };
+};
 
 // ─── Data helpers ─────────────────────────────────────────────────────────────
 const fmt = (n?: number | null): string => {
@@ -1315,10 +1470,31 @@ const Page19 = ({ d }: { d: ReportData }) => {
 
 // ─── PAGE 20: College Planning ──────────────────────────────────────────────────
 const Page20 = ({ d }: { d: ReportData }) => {
-  const numChildren = d.children ?? 2;
-  const collegeCost = d.collegeCost ?? 240000;
+  const childDetail = d.childrenDetail;
+  const numChildren = childDetail?.length ?? d.children ?? 2;
+  const collegeCost = d.collegeCost ?? (childDetail ? childDetail.reduce((s, c) => s + (c.projectedCost ?? 0), 0) : 240000);
   const bal529 = d.savings529 ?? 15000;
   const gap529 = d.collegeGap ?? Math.max(collegeCost - bal529, 0);
+  const currentYear = new Date().getFullYear();
+
+  // Prefer real per-child data when the API provides it; otherwise fall back
+  // to the generic illustrative timeline.
+  const timelineRows = childDetail && childDetail.length > 0
+    ? childDetail.map((c) => {
+      const yearsOut = Math.max((c.collegeStart ?? currentYear + 10) - currentYear, 1);
+      const monthlyNeeded = Math.round((c.projectedCost ?? 0) / (yearsOut * 12));
+      return {
+        name: c.name ? `${c.name}${c.age != null ? ` (Age ${c.age})` : ""}` : "Child",
+        timeline: `${yearsOut} year${yearsOut !== 1 ? "s" : ""} to college`,
+        monthly: `$${monthlyNeeded.toLocaleString()}/mo needed`,
+        widthPct: Math.min(Math.max(100 - yearsOut * 5, 15), 60),
+      };
+    })
+    : [
+      { name: "Child 1 (Age 5)", timeline: "13 years to college", monthly: "$867/mo needed", widthPct: 55 },
+      { name: "Child 2 (Age 3)", timeline: "15 years to college", monthly: "$720/mo needed", widthPct: 40 },
+    ];
+
   return (
     <PageWrap>
       <PageHeader section="Section 11.0: College Planning" />
@@ -1341,14 +1517,11 @@ const Page20 = ({ d }: { d: ReportData }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="border border-gray-200 rounded-xl p-5 sm:p-6">
           <div className="font-bold text-sm mb-4">Savings Timeline Per Child</div>
-          {([
-            ["Child 1 (Age 5)", "13 years to college", "$867/mo needed", "w-[55%]"],
-            ["Child 2 (Age 3)", "15 years to college", "$720/mo needed", "w-[40%]"],
-          ] as [string, string, string, string][]).map(([name, timeline, monthly, w]) => (
+          {timelineRows.map(({ name, timeline, monthly, widthPct }) => (
             <div key={name} className="mb-5">
               <div className="flex flex-col sm:flex-row sm:justify-between text-sm mb-1 gap-0.5"><strong>{name}</strong><span className="text-gray-400 text-xs">{timeline}</span></div>
               <div className="text-xs text-blue-600 mb-1.5">{monthly}</div>
-              <div className="h-2 bg-gray-100 rounded-full"><div className={`h-2 bg-blue-600 rounded-full ${w}`} /></div>
+              <div className="h-2 bg-gray-100 rounded-full"><div className="h-2 bg-blue-600 rounded-full" style={{ width: `${widthPct}%` }} /></div>
             </div>
           ))}
         </div>
@@ -1632,7 +1805,7 @@ export default function FinancialBlueprint() {
       }
 
       if (Array.isArray(parsed)) {
-        const merged: ReportData = {
+        const merged: any = {
           savingsRateScore: null,
           debtRatioScore: 0,
           investmentAllocScore: 0,
@@ -1649,13 +1822,13 @@ export default function FinancialBlueprint() {
               if (!merged.clientName && page.footer?.clientName) merged.clientName = page.footer.clientName;
               if (!merged.preparedBy && page.footer?.preparedBy) merged.preparedBy = page.footer.preparedBy;
             } else {
-              (merged as any)[k] = page[k];
+              merged[k] = page[k];
             }
           });
         });
-        setReportData(merged);
+        setReportData(normalizeReportData(merged));
       } else {
-        setReportData(parsed);
+        setReportData(normalizeReportData(parsed));
       }
     } catch (e) {
       console.error("Failed to parse reportData from localStorage:", e);
