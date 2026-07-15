@@ -117,6 +117,7 @@ interface ReportData {
   savings529?: number;
   collegeGap?: number;
   // Market scenarios
+  scenarios?: { scenario: string; return?: number; projectedPortfolio: number }[];
   optimisticPortfolio?: number;
   optimisticReplacement?: number;
   conservativePortfolio?: number;
@@ -125,7 +126,9 @@ interface ReportData {
   actionPlan?: string[];
   roadmap?: { quarter: string; steps: string[] }[];
   stressTestResult?: string;
-  // Disclosures (Page 25 explicit fields)
+  // Summary
+  notes?: string;
+  // Disclosures (Page 26 explicit fields)
   assumedReturn?: number;
   retireAge?: number;
   lifeExp?: number;
@@ -178,6 +181,15 @@ const normalizeAllocation = (list: any): { label: string; percent: number }[] | 
 const normalizeActionPlan = (list: any): string[] | undefined => {
   if (!Array.isArray(list)) return undefined;
   return list.map((item) => (typeof item === "string" ? item : item?.step ?? item?.label ?? String(item)));
+};
+
+const normalizeScenarios = (list: any): { scenario: string; return?: number; projectedPortfolio: number }[] | undefined => {
+  if (!Array.isArray(list)) return undefined;
+  return list.map((item) => ({
+    scenario: item?.scenario ?? item?.label ?? item?.name ?? "Scenario",
+    return: toNum(item?.return),
+    projectedPortfolio: toNum(item?.projectedPortfolio) ?? 0,
+  }));
 };
 
 const ALIGNMENT_WORD_SCORE: Record<string, number> = {
@@ -254,6 +266,7 @@ const normalizeReportData = (raw: any): ReportData => {
     assets: normalizeAssetList(d.assets),
     liabilities: normalizeAssetList(d.liabilities),
     allocation: normalizeAllocation(d.allocation),
+    scenarios: normalizeScenarios(d.scenarios),
 
     dtiRatio: toPercent(d.dtiRatio ?? d.debtToIncomeRatio),
     debtToIncomeRatio: toPercent(d.debtToIncomeRatio ?? d.dtiRatio),
@@ -1698,7 +1711,7 @@ const Page24 = ({ d }: { d: ReportData }) => {
     ],
     "Quarter 4": [
       ["Review tax positioning", "Work with CPA on year-end Roth conversion opportunity and harvest tax losses in brokerage."],
-      ["Annual plan review", "Schedule next annual WINTRICE Blueprint review to track progress against all 25 metrics."],
+      ["Annual plan review", "Schedule next annual WINTRICE Blueprint review to track progress against all 26 metrics."],
     ],
   };
 
@@ -1733,8 +1746,43 @@ const Page24 = ({ d }: { d: ReportData }) => {
   );
 };
 
-// ─── PAGE 25: Disclosures ───────────────────────────────────────────────────────
+// ─── PAGE 25: Summary ───────────────────────────────────────────────────────────
 const Page25 = ({ d }: { d: ReportData }) => {
+  const summaryText = d.notes && d.notes.trim().length > 0
+    ? d.notes
+    : "This Blueprint synthesizes your complete financial picture — income, savings, investments, and protection strategies — into a single roadmap toward your retirement goals. Review each section for detailed analysis, and revisit this summary periodically as your circumstances evolve.";
+  const proj = calcPortfolio(d);
+  const annInc = calcAnnualIncome(d);
+  const retAge = getRetAge(d);
+  const readiness = d.retirementReadinessScore ?? 72;
+  return (
+    <PageWrap>
+      <PageHeader section="Section 12.0: Summary" />
+      <SectionTitle title="Executive Summary" subtitle="A consolidated overview of your financial planning blueprint." />
+      <div className="border border-gray-200 rounded-xl p-5 sm:p-7 mb-6 sm:mb-8">
+        <div className="text-[10px] tracking-[2px] text-blue-600 uppercase font-bold mb-3">OVERVIEW</div>
+        <p className="text-sm text-gray-600 leading-relaxed">{summaryText}</p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {([
+          ["NET WORTH", fmt(d.netWorth), "border-gray-900"],
+          ["PROJECTED PORTFOLIO AT " + retAge, fmt(proj), "border-blue-600"],
+          ["ESTIMATED ANNUAL INCOME", fmt(annInc), "border-emerald-500"],
+          ["RETIREMENT READINESS", readiness + "/100", "border-purple-500"],
+        ] as [string, string, string][]).map(([label, val, border]) => (
+          <div key={label} className={`bg-gray-50 rounded-lg p-4 sm:p-5 border-l-4 ${border}`}>
+            <div className="text-[9px] sm:text-[10px] tracking-[2px] text-gray-400 uppercase mb-2">{label}</div>
+            <div className="text-lg sm:text-2xl font-black text-gray-900">{val}</div>
+          </div>
+        ))}
+      </div>
+      <PageFooter page={25} />
+    </PageWrap>
+  );
+};
+
+// ─── PAGE 26: Disclosures ───────────────────────────────────────────────────────
+const Page26 = ({ d }: { d: ReportData }) => {
   const inflRate = d.inflationRate ?? (typeof d.inflation === "number" ? d.inflation : 0.03);
   // Prefer explicit assumedReturn field; fall back to expectedAnnualReturn
   const annRetPct = d.assumedReturn != null
@@ -1771,7 +1819,7 @@ const Page25 = ({ d }: { d: ReportData }) => {
           Social Security estimates are based on current law and may change. © 2026 WINTRICE WEALTH MANAGEMENT. All rights reserved. LICENSED ADVISORY CONTENT.
         </p>
       </div>
-      <PageFooter page={25} />
+      <PageFooter page={26} />
     </PageWrap>
   );
 };
@@ -2022,7 +2070,7 @@ export default function FinancialBlueprint() {
   const pageComponents = [
     Page1, Page2, Page3, Page4, Page5, Page6, Page7, Page8, Page9, Page10,
     Page11, Page12, Page13, Page14, Page15, Page16, Page17, Page18, Page19, Page20,
-    Page21, Page22, Page23, Page24, Page25,
+    Page21, Page22, Page23, Page24, Page25, Page26,
   ];
 
   const total = pageComponents.length;

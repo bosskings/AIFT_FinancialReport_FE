@@ -1125,9 +1125,8 @@ function Review(props: any) {
       onSuccess: function (response: any) {
         console.log("Report generation successful:", response);
         var data = typeof response.data === "string" ? response.data : JSON.stringify(response.data);
-
         localStorage.setItem("reportData", data);
-
+        console.log(data);
         setReportReady(true);
       },
       onError: function (err: any) {
@@ -1160,7 +1159,7 @@ function Review(props: any) {
             </div>
           </div>
           <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-3">
-            Building your personalized 25-page<br />retirement plan...
+            Building your personalized 26-page<br />retirement plan...
           </h2>
           <p className="text-sm text-gray-400 leading-relaxed mb-2">
             Calculating your tax projections and analyzing social security scenarios.
@@ -1462,78 +1461,78 @@ export default function RetirementPlan() {
       ],
       riskProfile: fd.confidence >= 4 ? "Aggressive Growth" : fd.confidence >= 3 ? "Moderate Growth" : "Conservative",
 
-      // Page 9: Risk Tolerance
+      // Page 10: Risk Tolerance
       riskCapacity: fd.confidence >= 4 ? "Aggressive" : "Moderate",
       riskBehavior: fd.confidence >= 4 ? "Growth Oriented" : "Slightly Conservative",
       portfolioAlignment: 85,
       confidenceScore: fd.confidence,
 
-      // Page 10: Retirement Projection
+      // Page 11: Retirement Projection
       projectedPortfolio67: projectedPortfolio,
       estimatedAnnualRetIncome: estimatedAnnualRetIncome,
       retirementProjStartAge: currentAge ?? retireAgeNum - yearsToRetire,
       retirementProjEndAge: retireAgeNum,
 
-      // Page 11: Retirement Income Gap
+      // Page 12: Retirement Income Gap
       targetRetirementIncome: retIncome,
       projectedNeededIncome: retIncome,
       retirementIncomeGap: retirementIncomeGap,
       gapCoverage: gapCoverage,
 
-      // Page 12: Savings Adjustment
+      // Page 13: Savings Adjustment
       savingsIncrease: savingsIncrease,
       delayRetirementYears: delayRetirementYears,
 
-      // Page 13: Social Security
+      // Page 14: Social Security
       ssa67: ssa67,
       ssa70: ssa70,
       breakEvenAge: 81,
 
-      // Page 14: Plan Optimization
+      // Page 15: Plan Optimization
       currentContribution: contribRateNum / 100,
       recommendedContribution: recContribRate / 100,
       employerMatchStatus: "Maximized",
 
-      // Page 15: Tax Optimization
+      // Page 16: Tax Optimization
       taxRate: taxRateNum,
       traditionalPercent: 60,
       rothPercent: 40,
       lifetimeTaxSavings: 112000,
 
-      // Page 16: Inflation
+      // Page 17: Inflation
       inflationRate: fd.inflationRate,
       inflation: fd.inflationRate,
       salaryToday: salary,
       salaryFuture: salaryFuture,
 
-      // Page 17: Longevity
+      // Page 18: Longevity
       chancePast90: 38,
       chancePast95: 16,
       portfolioLastsTo: 93,
 
-      // Page 18: Healthcare
+      // Page 19: Healthcare
       healthcareAnnual: 18500,
       healthcareLifetime: 310000,
 
-      // Page 19: Insurance
+      // Page 20: Insurance
       lifeInsurance: lifeInsVal,
       recommendedInsurance: recommendedInsurance,
       disabilityCoverage: "60% Income Replacement",
       insuranceGap: insuranceGap,
 
-      // Page 20: College Planning
+      // Page 21: College Planning
       children: childrenNum,
       collegeCost: collegeTotalCost || 240000,
       savings529: savings529Val,
       collegeGap: collegeGap || 180000,
 
-      // Page 21–22: Market Scenarios
+      // Page 22: Scenario Analysis
       optimisticPortfolio: optimisticPortfolio,
       optimisticReplacement: optimisticReplacement,
       conservativePortfolio: conservativePortfolio,
       conservativeReplacement: conservativeReplacement,
 
-      // Page 23–24: Action Plan
+      // Page 23–24: Action Plan / Roadmap
       actionPlan: [
         "Increase retirement contribution to " + recContribRate + "%",
         "Build emergency fund to $" + recommendedEFund.toLocaleString(),
@@ -1547,7 +1546,7 @@ export default function RetirementPlan() {
         { quarter: "Quarter 4", steps: ["Review tax positioning"] },
       ],
 
-      // Page 25: Disclosures
+      // Page 26: Disclosures
       assumedReturn: annReturnNum * 100,
       retireAge: retireAgeNum,
       lifeExp: lifeExpNum,
