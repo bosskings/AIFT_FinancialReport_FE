@@ -5,7 +5,7 @@ const Profile = () => {
   const [fullName, setFullName] = useState('');
   const [dob, setDob] = useState('');
   const [maritalStatus, setMaritalStatus] = useState('');
-  const [retirementAge, setRetirementAge] = useState('65');
+  const [retirementAge, setRetirementAge] = useState('');
   const navigate = useNavigate();
 
   const handleNext = (e: any) => {
@@ -148,6 +148,7 @@ const Profile = () => {
                     required
                     min={40}
                     max={80}
+                    placeholder="65"
                     onChange={(e) => setRetirementAge(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 text-gray-500 border border-gray-200 rounded-lg text-sm focus:outline-none bg-white"
                     onFocus={e => e.target.style.borderColor = '#1a3260'}
