@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Income = () => {
-  const [grossSalary, setGrossSalary] = useState('120,000');
-  const [otherIncome, setOtherIncome] = useState('0.00');
+  const [grossSalary, setGrossSalary] = useState('');
+  const [otherIncome, setOtherIncome] = useState('');
   const navigate = useNavigate();
 
   const formatNumber = (value: string) => {
@@ -62,7 +62,7 @@ const Income = () => {
                     value={grossSalary}
                     required
                     onChange={(e) => setGrossSalary(formatNumber(e.target.value))}
-                    placeholder="0"
+                    placeholder="120,000"
                     className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white"
                     onFocus={e => e.target.style.borderColor = '#1a3260'}
                     onBlur={e => e.target.style.borderColor = '#e5e7eb'}

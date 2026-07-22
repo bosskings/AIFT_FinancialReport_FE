@@ -33,8 +33,22 @@ var STEPS = [
   { id: "income", label: "Income Details" },
   { id: "plans", label: "Employer Plans" },
   { id: "iras", label: "IRAs & Savings" },
+  { id: "allocation", label: "Asset Allocation" },
   { id: "goals", label: "Retirement Goals" },
   { id: "review", label: "Review & Generate" },
+];
+
+var ASSET_CLASSES = [
+  { label: "U.S. Large Cap Stocks", historical: "9% - 11%" },
+  { label: "U.S. Small/Mid Cap Stocks", historical: "10% - 12%" },
+  { label: "International Developed Stocks", historical: "7% - 9%" },
+  { label: "Emerging Markets Stocks", historical: "8% - 11%" },
+  { label: "U.S. Bonds", historical: "3% - 5%" },
+  { label: "International Bonds", historical: "2% - 4%" },
+  { label: "Real Estate / REITs", historical: "7% - 10%" },
+  { label: "Commodities", historical: "4% - 7%" },
+  { label: "Cash / Cash Equivalents", historical: "1% - 3%" },
+  { label: "Alternatives", historical: "5% - 9%" },
 ];
 
 function Ico(props: any) {
@@ -633,22 +647,7 @@ function Plans(props: any) {
                 </span>
               </FieldWrap>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-              <FieldWrap label="Expected Annual Return (%)" hint="Projected long-term growth rate.">
-                <InpIcon d={P.trend} />
-                <input
-                  type="number"
-                  value={data.annReturn}
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  placeholder="7.0"
-                  onChange={function (e: any) { setData(function (p: any) { return Object.assign({}, p, { annReturn: e.target.value }); }); }}
-                  className={INP_BASE + " pl-10 pr-4"}
-                  onFocus={focusNavy}
-                  onBlur={blurGray}
-                />
-              </FieldWrap>
+            <div className="mb-6">
               <div>
                 <label className="block text-xs font-semibold tracking-widest text-gray-500 uppercase mb-2">Contributions Duration</label>
                 <div className="rounded-lg border border-gray-200 px-4 py-3" style={{ backgroundColor: "#fafafa" }}>
@@ -899,7 +898,7 @@ function IRAs(props: any) {
               </div>
             </div>
           </div>
-          <NavRow onPrev={props.onPrev} label="Next Step: Goals" />
+          <NavRow onPrev={props.onPrev} label="Next Step: Asset Allocation" />
         </form>
       </Card>
       <FootNote />
@@ -908,6 +907,134 @@ function IRAs(props: any) {
 }
 
 // ─── Step 5: Goals ────────────────────────────────────────────────────────────
+function AssetAllocation(props: any) {
+  var data: any = props.data;
+  var setData: any = props.setData;
+  var rows = data.clientAllocations || [];
+  var allocationTotal = rows.reduce(function (sum: number, row: any) {
+    return sum + (parseFloat(row.allocationPercent) || 0);
+  }, 0);
+  var allAllocationsEntered = rows.every(function (row: any) { return String(row.allocationPercent).trim() !== ""; });
+  var allReturnsEntered = rows.every(function (row: any) { return String(row.expectedReturnPercent).trim() !== ""; });
+  var isAllocationTotalValid = Math.abs(allocationTotal - 100) < 0.01;
+  var canProceed = allAllocationsEntered && allReturnsEntered && isAllocationTotalValid;
+
+  function updateRow(index: number, key: string, value: string) {
+    setData(function (p: any) {
+      var next = p.clientAllocations.map(function (row: any, i: number) {
+        return i === index ? Object.assign({}, row, { [key]: value }) : row;
+      });
+      return Object.assign({}, p, { clientAllocations: next });
+    });
+  }
+
+  function handleSubmit(e: any) {
+    e.preventDefault();
+    if (!canProceed) return;
+    props.onNext();
+  }
+
+  return (
+    <div>
+      <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Asset Allocation</h1>
+      <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-2xl">
+        Enter the portfolio allocation and expected annual return for each asset class. These client-entered assumptions are sent to the report API and drive all projections.
+      </p>
+      <Card cls="p-6 sm:p-8">
+        <form onSubmit={handleSubmit}>
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-5">
+            <SecHead title="Client Allocation Assumptions" />
+            <div
+              className="rounded-lg px-4 py-2 text-sm font-bold shrink-0"
+              style={{
+                backgroundColor: isAllocationTotalValid ? "#ecfdf5" : "#fff7ed",
+                color: isAllocationTotalValid ? "#047857" : "#c2410c",
+                border: "1px solid " + (isAllocationTotalValid ? "#a7f3d0" : "#fed7aa"),
+              }}
+            >
+              Total Allocation: {allocationTotal.toFixed(1)}%
+            </div>
+          </div>
+          <div className="overflow-x-auto border border-gray-100 rounded-xl mb-5">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead style={{ backgroundColor: NAVYLT }}>
+                <tr className="text-left text-xs font-bold tracking-widest uppercase" style={{ color: NAVY }}>
+                  <th className="px-4 py-3">Asset Class</th>
+                  <th className="px-4 py-3">Historical Average Range</th>
+                  <th className="px-4 py-3">Allocation %</th>
+                  <th className="px-4 py-3">Expected Annual Return %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(function (row: any, index: number) {
+                  return (
+                    <tr key={row.label} className="border-t border-gray-100">
+                      <td className="px-4 py-3 font-semibold text-gray-800">{row.label}</td>
+                      <td className="px-4 py-3 text-gray-500">{row.historical}</td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={row.allocationPercent}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          required
+                          placeholder="0"
+                          onChange={function (e: any) { updateRow(index, "allocationPercent", e.target.value); }}
+                          className={INP_BASE + " px-3"}
+                          onFocus={focusNavy}
+                          onBlur={blurGray}
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <input
+                          type="number"
+                          value={row.expectedReturnPercent}
+                          min="-20"
+                          max="30"
+                          step="0.1"
+                          required
+                          placeholder="Enter return"
+                          onChange={function (e: any) { updateRow(index, "expectedReturnPercent", e.target.value); }}
+                          className={INP_BASE + " px-3"}
+                          onFocus={focusNavy}
+                          onBlur={blurGray}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <InfoBox title="Historical Averages Are Educational">
+            Historical ranges are shown for context only. They are not pre-filled and are not used unless you type your own expected return for that asset class.
+          </InfoBox>
+          {!canProceed && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mt-4">
+              Enter every allocation and expected return, and make sure allocations sum to exactly 100%, before continuing.
+            </p>
+          )}
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-6 gap-4">
+            <button type="button" onClick={props.onPrev} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-700 transition-colors">
+              <Ico d={P.arrowL} sz="w-4 h-4" /> Previous Step
+            </button>
+            <button
+              type="submit"
+              disabled={!canProceed}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-sm transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ backgroundColor: NAVY }}
+            >
+              Next Step: Goals <Ico d={P.arrowR} sz="w-4 h-4" st="white" />
+            </button>
+          </div>
+        </form>
+      </Card>
+      <FootNote />
+    </div>
+  );
+}
+
 function Goals(props: any) {
   var data: any = props.data;
   var setData: any = props.setData;
@@ -1271,22 +1398,21 @@ export default function RetirementPlan() {
     fullName: "",
     dob: "",
     maritalStatus: "",
-    dependents: "0",
-    retireAge: "67",
-    lifeExpectancy: "92",
+    dependents: "",
+    retireAge: "",
+    lifeExpectancy: "",
     grossSalary: "",
     otherIncome: "",
     employer: "",
-    taxRate: "22",
+    taxRate: "",
     monthlyIncome: "",
     monthlyExpenses: "",
     participates: true,
     planTypes: ["401k"],
     planBalance: "",
-    contribRate: "8",
+    contribRate: "",
     contribUnit: "%",
     empMatch: "0.50",
-    annReturn: "6.5",
     contUntilRet: true,
     hasIRA: false,
     iraTypes: [],
@@ -1297,9 +1423,12 @@ export default function RetirementPlan() {
     lifeInsurance: "",
     netWorthInput: "",
     incomeSrc: ["none"],
+    clientAllocations: ASSET_CLASSES.map(function (asset: any) {
+      return Object.assign({}, asset, { allocationPercent: "", expectedReturnPercent: "" });
+    }),
     retirementIncome: "",
-    children: "0",
-    salaryGrowth: "3.0",
+    children: "",
+    salaryGrowth: "",
     lifestyle: "moderate",
     confidence: 3,
     inflation: "standard",
@@ -1331,7 +1460,17 @@ export default function RetirementPlan() {
     var salaryGrowthNum = parseFloat(fd.salaryGrowth) / 100 || 0.03;
     var taxRateNum = parseFloat(fd.taxRate) || 22;
     var yearsToRetire = currentAge != null ? Math.max(retireAgeNum - currentAge, 1) : 32;
-    var annReturnNum = parseFloat(fd.annReturn) / 100 || 0.065;
+    var clientAllocations = (fd.clientAllocations || []).map(function (row: any) {
+      return {
+        label: row.label,
+        allocation: parseFloat(row.allocationPercent) / 100 || 0,
+        expectedReturn: parseFloat(row.expectedReturnPercent) / 100 || 0,
+      };
+    });
+    var weightedReturnNum = clientAllocations.reduce(function (sum: number, row: any) {
+      return sum + (row.allocation * row.expectedReturn);
+    }, 0);
+    var annReturnNum = weightedReturnNum;
 
     function fv(pv: any, pmt: any, rate: any, n: any) {
       if (n <= 0) return pv;
@@ -1409,7 +1548,6 @@ export default function RetirementPlan() {
       currentRetirementSavings: planBal,
       monthlyRetirementContribution: monthlyContrib,
       employerMatch: empMatchNum,
-      expectedAnnualReturn: annReturnNum,
       contribRate: contribRateNum,
       planTypes: fd.planTypes,
       hasIRA: fd.hasIRA,
@@ -1453,12 +1591,10 @@ export default function RetirementPlan() {
       mortgageYears: 25,
 
       // Page 8: Investment Allocation
-      allocation: [
-        { label: "U.S. Stocks", percent: 60 },
-        { label: "International Stocks", percent: 15 },
-        { label: "Bonds", percent: 20 },
-        { label: "Cash", percent: 5 },
-      ],
+      allocation: clientAllocations.map(function (row: any) {
+        return { label: row.label, percent: Math.round((row.allocation || 0) * 100) };
+      }),
+      clientAllocations: clientAllocations,
       riskProfile: fd.confidence >= 4 ? "Aggressive Growth" : fd.confidence >= 3 ? "Moderate Growth" : "Conservative",
 
       // Page 10: Risk Tolerance
@@ -1547,7 +1683,6 @@ export default function RetirementPlan() {
       ],
 
       // Page 26: Disclosures
-      assumedReturn: annReturnNum * 100,
       retireAge: retireAgeNum,
       lifeExp: lifeExpNum,
 

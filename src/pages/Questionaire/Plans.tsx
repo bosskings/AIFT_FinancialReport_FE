@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom';
 const Plans = () => {
   const [participates, setParticipates] = useState<boolean | null>(true);
   const [planTypes, setPlanTypes] = useState<string[]>(['401k']);
-  const [balance, setBalance] = useState('0.00');
-  const [contributionRate, setContributionRate] = useState('0');
+  const [balance, setBalance] = useState('');
+  const [contributionRate, setContributionRate] = useState('');
   const [contributionUnit, setContributionUnit] = useState<'%' | '$'>('%');
   const [employerMatch, setEmployerMatch] = useState('no_match');
-  const [annualReturn, setAnnualReturn] = useState('5.0');
+  const [annualReturn, setAnnualReturn] = useState('');
   const [continueUntilRetirement, setContinueUntilRetirement] = useState(true);
   const navigate = useNavigate();
 
@@ -166,6 +166,7 @@ const Plans = () => {
                       <input
                         type="text"
                         value={balance}
+                        placeholder="0.00"
                         onChange={(e) => setBalance(formatNumber(e.target.value))}
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white"
                         onFocus={e => e.target.style.borderColor = '#1a3260'}
@@ -212,6 +213,7 @@ const Plans = () => {
                         <input
                           type="number"
                           value={contributionRate}
+                          placeholder="0"
                           onChange={(e) => setContributionRate(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-r-lg text-sm text-gray-700 focus:outline-none bg-white"
                           onFocus={e => e.target.style.borderColor = '#1a3260'}
@@ -273,6 +275,7 @@ const Plans = () => {
                         type="number"
                         value={annualReturn}
                         step="0.1"
+                        placeholder="5.0"
                         onChange={(e) => setAnnualReturn(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white"
                         onFocus={e => e.target.style.borderColor = '#1a3260'}

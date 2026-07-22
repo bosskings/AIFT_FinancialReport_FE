@@ -61,6 +61,7 @@ interface ReportData {
   mortgageYears?: number;
   // Allocation
   allocation?: { label: string; percent: number }[];
+  clientAllocations?: { label: string; allocation: number; expectedReturn: number }[];
   riskProfile?: string;
   // Risk tolerance
   riskCapacity?: string;
@@ -260,12 +261,21 @@ const normalizeReportData = (raw: any): ReportData => {
     retirementAgeGoal: toNum(d.retirementAgeGoal ?? d.retirementAge),
     currentRetirementSavings: toNum(d.currentRetirementSavings ?? d.currentRetirementBalance ?? d.retirementSavings),
     monthlyRetirementContribution: toNum(d.monthlyRetirementContribution ?? d.monthlyContribution),
-    expectedAnnualReturn: toNum(d.expectedAnnualReturn ?? d.planningReturn),
+    expectedAnnualReturn: toNum(d.expectedAnnualReturn),
     riskProfile: d.riskProfile ?? d.portfolioType,
 
     assets: normalizeAssetList(d.assets),
     liabilities: normalizeAssetList(d.liabilities),
     allocation: normalizeAllocation(d.allocation),
+    clientAllocations: Array.isArray(d.clientAllocations)
+      ? d.clientAllocations.map(function (row: any) {
+        return {
+          label: row.label,
+          allocation: toNum(row.allocation) ?? toNum(row.allocationPercent) ?? 0,
+          expectedReturn: toNum(row.expectedReturn) ?? toNum(row.expectedReturnPercent) ?? 0,
+        };
+      })
+      : undefined,
     scenarios: normalizeScenarios(d.scenarios),
 
     dtiRatio: toPercent(d.dtiRatio ?? d.debtToIncomeRatio),
@@ -314,7 +324,11 @@ const calcPortfolio = (d: ReportData): number => {
   if (d.projectedPortfolio67 != null && isFinite(d.projectedPortfolio67)) return d.projectedPortfolio67;
   const pv = d.currentRetirementSavings ?? 0;
   const pmt = (d.monthlyRetirementContribution ?? 633) * 12;
-  const r = d.expectedAnnualReturn ?? 0.07;
+  const r = Array.isArray(d.clientAllocations) && d.clientAllocations.length > 0
+    ? d.clientAllocations.reduce(function (sum, item) {
+      return sum + ((item.allocation ?? 0) * (item.expectedReturn ?? 0));
+    }, 0)
+    : d.expectedAnnualReturn ?? 0.07;
   const n = getYears(d);
   if (r === 0) return Math.round(pv + pmt * n);
   const f = Math.pow(1 + r, n);
@@ -860,12 +874,17 @@ const Page7 = ({ d }: { d: ReportData }) => {
 
 // ─── PAGE 8: Investment Allocation ─────────────────────────────────────────────
 const Page8 = ({ d }: { d: ReportData }) => {
-  const alloc = d.allocation ?? [{ label: "U.S. Stocks", percent: 60 }, { label: "International Stocks", percent: 15 }, { label: "Bonds", percent: 20 }, { label: "Cash", percent: 5 }];
+  const alloc = d.clientAllocations?.map(function (item) {
+    return { label: item.label, percent: Math.round((item.allocation ?? 0) * 100) };
+  }) ?? d.allocation ?? [{ label: "U.S. Stocks", percent: 60 }, { label: "International Stocks", percent: 15 }, { label: "Bonds", percent: 20 }, { label: "Cash", percent: 5 }];
   const colors = ["#2563eb", "#7c3aed", "#16a34a", "#f59e0b"];
   return (
     <PageWrap>
       <PageHeader section="Section 3.0: Allocation" />
       <SectionTitle title="Current Investment Allocation" subtitle="Detailed analytical breakdown of strategic portfolio positioning." />
+      <p className="text-sm text-gray-500 leading-relaxed mb-4">
+        These projections reflect the client’s chosen asset allocations and the expected return assumptions entered for each asset class.
+      </p>
       <div className="flex justify-end mb-4">
         <span className="bg-green-50 text-green-800 text-xs font-bold px-4 py-1.5 rounded-full text-center">✓ Risk Profile: {d.riskProfile ?? "Moderate Growth"}</span>
       </div>
@@ -936,7 +955,11 @@ const Page9 = ({ d }: { d: ReportData }) => {
 const Page10 = ({ d }: { d: ReportData }) => {
   const pv = d.currentRetirementSavings ?? 82500;
   const pmt = (d.monthlyRetirementContribution ?? 633) * 12;
-  const r = d.expectedAnnualReturn ?? 0.07;
+  const r = Array.isArray(d.clientAllocations) && d.clientAllocations.length > 0
+    ? d.clientAllocations.reduce(function (sum, item) {
+      return sum + ((item.allocation ?? 0) * (item.expectedReturn ?? 0));
+    }, 0)
+    : d.expectedAnnualReturn ?? 0.07;
   const n = getYears(d);
   const bars = Array.from({ length: Math.min(n, 35) }, (_, i) => {
     if (r === 0) return pv + pmt * i;
@@ -1565,7 +1588,7 @@ const Page21 = ({ d }: { d: ReportData }) => {
     <PageWrap>
       <PageHeader section="Section 11.0: Scenarios" />
       <SectionTitle title="Scenario Analysis - Optimistic Market"
-        subtitle="A strategic projection of retirement outcomes assuming favorable macroeconomic factors and peak performance of core assets." />
+        subtitle="A strategic projection of retirement outcomes based on the client’s chosen allocations and expected return assumptions." />
       <div className="flex flex-col lg:flex-row gap-5 sm:gap-6 mt-6">
         {([
           {
@@ -1614,7 +1637,7 @@ const Page22 = ({ d }: { d: ReportData }) => {
     <PageWrap>
       <PageHeader section="Section 11.0: Scenarios" />
       <SectionTitle title="Scenario Analysis - Conservative Market"
-        subtitle="Detailed stress test and portfolio projections based on conservative market parameters." />
+        subtitle="Detailed stress test and portfolio projections based on the client’s chosen allocations and expected return assumptions." />
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 sm:mt-8">
         {([
           ["🗂", "PORTFOLIO AT 67", fmt(conservative)],
@@ -1784,10 +1807,6 @@ const Page25 = ({ d }: { d: ReportData }) => {
 // ─── PAGE 26: Disclosures ───────────────────────────────────────────────────────
 const Page26 = ({ d }: { d: ReportData }) => {
   const inflRate = d.inflationRate ?? (typeof d.inflation === "number" ? d.inflation : 0.03);
-  // Prefer explicit assumedReturn field; fall back to expectedAnnualReturn
-  const annRetPct = d.assumedReturn != null
-    ? d.assumedReturn
-    : (d.expectedAnnualReturn != null ? d.expectedAnnualReturn * 100 : 6.5);
   // Prefer explicit retireAge / lifeExp disclosure fields; fall back to computed values
   const retAge = d.retireAge ?? getRetAge(d);
   const lifeExp = d.lifeExp ?? d.lifeExpectancy ?? 92;
@@ -1797,7 +1816,7 @@ const Page26 = ({ d }: { d: ReportData }) => {
       <SectionTitle title="Disclosures & Assumptions" subtitle="Institutional Financial Planning Blueprint" />
       <div className="mt-4">
         {([
-          ["📈", "Assumed Return", annRetPct.toFixed(1) + "%"],
+          ["🔁", "Return Assumptions", "Based on client-entered asset returns"],
           ["🗂", "Inflation", (inflRate * 100).toFixed(1) + "%"],
           ["⏱", "Retirement Age", String(retAge)],
           ["⏳", "Life Expectancy", String(lifeExp)],
@@ -1813,7 +1832,7 @@ const Page26 = ({ d }: { d: ReportData }) => {
         <div className="font-bold text-sm text-gray-900 mb-3">Important Disclosures</div>
         <p className="text-xs text-gray-400 leading-loose">
           This Financial Planning Blueprint is prepared by the WINTRICE Retirement Intelligence System for informational and educational purposes only.
-          It does not constitute investment, legal, or tax advice. All projections are based on assumptions that may not materialize.
+          It does not constitute investment, legal, or tax advice. All projections are based on the client’s chosen asset allocations and expected return assumptions for each asset class.
           Past performance is not indicative of future results. Consult a licensed financial advisor before making any investment decisions.
           The projected portfolio values, income estimates, and scenario analyses are hypothetical and subject to market risk, inflation, and legislative changes.
           Social Security estimates are based on current law and may change. © 2026 WINTRICE WEALTH MANAGEMENT. All rights reserved. LICENSED ADVISORY CONTENT.

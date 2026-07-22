@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Goals = () => {
-  const [annualIncome, setAnnualIncome] = useState('85,000');
+  const [annualIncome, setAnnualIncome] = useState('');
   const [lifestyle, setLifestyle] = useState('moderate');
   const [confidence, setConfidence] = useState(3);
   const [inflation, setInflation] = useState('standard');
@@ -98,6 +98,7 @@ const Goals = () => {
                   type="text"
                   value={annualIncome}
                   required
+                  placeholder="85,000"
                   onChange={(e) => setAnnualIncome(formatNumber(e.target.value))}
                   className="w-full pl-9 pr-4 py-3.5 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white"
                   onFocus={e => e.target.style.borderColor = '#1a3260'}

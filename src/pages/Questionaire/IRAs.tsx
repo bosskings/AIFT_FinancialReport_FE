@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 const IRAs = () => {
   const [hasIRA, setHasIRA] = useState(true);
   const [iraTypes, setIraTypes] = useState<string[]>(['traditional']);
-  const [iraBalance, setIraBalance] = useState('50,000');
-  const [iraContributions, setIraContributions] = useState('7,000');
-  const [taxableSavings, setTaxableSavings] = useState('0.00');
+  const [iraBalance, setIraBalance] = useState('');
+  const [iraContributions, setIraContributions] = useState('');
+  const [taxableSavings, setTaxableSavings] = useState('');
   const [incomeSources, setIncomeSources] = useState<string[]>(['none']);
   const navigate = useNavigate();
 
@@ -150,6 +150,7 @@ const IRAs = () => {
                       <input
                         type="text"
                         value={iraBalance}
+                        placeholder="50,000"
                         onChange={(e) => setIraBalance(formatNumber(e.target.value))}
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white"
                         onFocus={e => e.target.style.borderColor = '#1a3260'}
@@ -173,6 +174,7 @@ const IRAs = () => {
                       <input
                         type="text"
                         value={iraContributions}
+                        placeholder="7,000"
                         onChange={(e) => setIraContributions(formatNumber(e.target.value))}
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white"
                         onFocus={e => e.target.style.borderColor = '#1a3260'}
@@ -208,6 +210,7 @@ const IRAs = () => {
                   <input
                     type="text"
                     value={taxableSavings}
+                    placeholder="0.00"
                     onChange={(e) => setTaxableSavings(formatNumber(e.target.value))}
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none bg-white"
                     onFocus={e => e.target.style.borderColor = '#1a3260'}
