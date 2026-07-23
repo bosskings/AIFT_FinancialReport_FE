@@ -1710,6 +1710,7 @@ export default function RetirementPlan() {
     if (currentStep === "income") return <Income data={formData} setData={setFormData} onNext={goNext} onPrev={goPrev} />;
     if (currentStep === "plans") return <Plans data={formData} setData={setFormData} onNext={goNext} onPrev={goPrev} />;
     if (currentStep === "iras") return <IRAs data={formData} setData={setFormData} onNext={goNext} onPrev={goPrev} />;
+    if (currentStep === "allocation") return <AssetAllocation data={formData} setData={setFormData} onNext={goNext} onPrev={goPrev} />;
     if (currentStep === "goals") return <Goals data={formData} setData={setFormData} onNext={goNext} onPrev={goPrev} />;
     if (currentStep === "review") return <Review onPrev={goPrev} generateReport={generateReport} isLoading={isLoading} payload={payload} />;
     return null;
